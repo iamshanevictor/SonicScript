@@ -1,0 +1,9 @@
+@import './variables.css';
+/* We include variables.css but layout-panels.css is no longer needed since we use scoped styles in App.vue */
+/* Removed unnecessary imports since we're using scoped styles in App.vue */
+/* Keep these for compatibility, but we'll move to the new layout */
+/* @import './layout.css';
+@import './home.css';
+@import './dashboard.css';
+@import './history.css';
+@import './help.css'; */ 
