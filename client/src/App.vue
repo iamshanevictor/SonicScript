@@ -101,84 +101,235 @@
         </div>
         
         <div class="chat-summary">
-          <p>These sources contain audio transcriptions of meetings, interviews, and lectures. The audio processing system helps identify speakers, segments, and key topics. The system focuses on enhancing speech recognition accuracy, improving transcript quality, and generating structured notes with timestamps and speaker identification.</p>
+          <p>Upload MP3 files for transcription and preprocessing. Visualize audio waveforms, cut segments at specific timestamps, and transcribe content. All transcriptions and metadata will be automatically saved to CSV files.</p>
         </div>
         
         <div class="action-bar">
           <button class="action-btn-text">
-            <span class="material-symbols-outlined">bookmark</span>
-            <span>Save to note</span>
+            <span class="material-symbols-outlined">upload_file</span>
+            <span>Upload Audio</span>
           </button>
           <button class="action-btn-text">
-            <span class="material-symbols-outlined">note</span>
+            <span class="material-symbols-outlined">file_download</span>
+            <span>Export CSV</span>
           </button>
         </div>
         
-        <div class="chat-tools">
-          <button class="tool-btn">
-            <span class="material-symbols-outlined">note_add</span>
-            <span>Add note</span>
-          </button>
-          <button class="tool-btn">
-            <span class="material-symbols-outlined">equalizer</span>
-            <span>Audio Overview</span>
-          </button>
-          <button class="tool-btn">
-            <span class="material-symbols-outlined">schema</span>
-            <span>Mind Map</span>
-          </button>
+        <!-- Audio Visualizer and Controls -->
+        <div class="audio-visualizer-container">
+          <div class="visualizer-header">
+            <div class="file-info">Interview_001.mp3</div>
+            <div class="visualizer-controls">
+              <button class="visualizer-btn">
+                <span class="material-symbols-outlined">zoom_in</span>
+              </button>
+              <button class="visualizer-btn">
+                <span class="material-symbols-outlined">zoom_out</span>
+              </button>
+              <button class="visualizer-btn">
+                <span class="material-symbols-outlined">unfold_more_horizontal</span>
+              </button>
+            </div>
+          </div>
+          
+          <div class="audio-visualizer">
+            <div class="waveform-placeholder">
+              <span class="material-symbols-outlined" style="font-size: 48px;">equalizer</span>
+              <span>Audio waveform visualization</span>
+            </div>
+          </div>
+          
+          <div class="audio-controls">
+            <button class="audio-control-btn">
+              <span class="material-symbols-outlined">play_arrow</span>
+            </button>
+            <button class="audio-control-btn">
+              <span class="material-symbols-outlined">pause</span>
+            </button>
+            <div class="audio-timeline">
+              <div class="audio-progress" style="width: 30%;"></div>
+              <div class="timeline-marker" style="left: 20%;" title="Cut point">
+                <span class="marker-line"></span>
+                <span class="marker-handle"></span>
+              </div>
+              <div class="timeline-marker" style="left: 45%;" title="Cut point">
+                <span class="marker-line"></span>
+                <span class="marker-handle"></span>
+              </div>
+              <div class="timeline-marker" style="left: 70%;" title="Cut point">
+                <span class="marker-line"></span>
+                <span class="marker-handle"></span>
+              </div>
+            </div>
+            <button class="audio-control-btn active">
+              <span class="material-symbols-outlined">content_cut</span>
+            </button>
+            <button class="audio-control-btn">
+              <span class="material-symbols-outlined">volume_up</span>
+            </button>
+          </div>
         </div>
         
+        <div class="segment-tools">
+          <div class="segment-tool">
+            <span class="material-symbols-outlined">auto_awesome</span>
+            <span>Auto-detect segments</span>
+          </div>
+          <div class="segment-tool">
+            <span class="material-symbols-outlined">music_note</span>
+            <span>Remove silence</span>
+          </div>
+          <div class="segment-tool">
+            <span class="material-symbols-outlined">analytics</span>
+            <span>Analyze audio</span>
+          </div>
+        </div>
+        
+        <!-- Transcription Segments -->
         <div class="transcription-container">
-          <div class="transcription-segment">
+          <div class="transcription-segment completed">
             <div class="segment-header">
               <div class="segment-timestamp">00:00:15 - 00:00:22</div>
-              <button class="edit-btn">
-                <span class="material-symbols-outlined">edit</span>
-              </button>
+              <div class="segment-actions">
+                <button class="edit-btn">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button class="delete-btn">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
             </div>
             <div class="segment-text">
               Welcome to our meeting about the quarterly results. Today we'll be discussing the performance of our key products.
             </div>
           </div>
 
-          <div class="transcription-segment">
+          <div class="transcription-segment completed">
             <div class="segment-header">
               <div class="segment-timestamp">00:00:24 - 00:00:36</div>
-              <button class="edit-btn">
-                <span class="material-symbols-outlined">edit</span>
-              </button>
+              <div class="segment-actions">
+                <button class="edit-btn">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button class="delete-btn">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
             </div>
             <div class="segment-text">
               As you can see from the charts, our main product line has shown a 15% increase in revenue compared to last quarter.
             </div>
           </div>
 
-          <div class="transcription-segment">
+          <div class="transcription-segment active">
             <div class="segment-header">
               <div class="segment-timestamp">00:00:40 - 00:00:58</div>
-              <button class="edit-btn">
-                <span class="material-symbols-outlined">edit</span>
-              </button>
+              <div class="segment-actions">
+                <button class="save-btn">
+                  <span class="material-symbols-outlined">save</span>
+                </button>
+                <button class="delete-btn">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
             </div>
-            <div class="segment-text">
-              We've also seen significant growth in our new market segments, particularly in the enterprise customer category which has grown by 23%.
+            <textarea class="segment-input" placeholder="Type what you hear in this segment...">We've also seen significant growth in our new market segments, particularly in the enterprise customer category which has grown by</textarea>
+          </div>
+          
+          <div class="transcription-segment untranscribed">
+            <div class="segment-header">
+              <div class="segment-timestamp">00:01:02 - 00:01:14</div>
+              <button class="transcribe-btn">
+                <span class="material-symbols-outlined">mic</span>
+                <span>Start transcribing</span>
+              </button>
             </div>
           </div>
         </div>
         
-        <div class="suggestion-chips">
-          <div class="suggestion-chip">How effectively does SonicScript detect speakers?</div>
-          <div class="suggestion-chip">What were the main points in Meeting_Notes.mp3?</div>
-          <div class="suggestion-chip">Summarize key insights</div>
-        </div>
-        
-        <div class="chat-input">
-          <input type="text" placeholder="Start typing..." />
-          <div class="input-count">2 sources</div>
-          <button class="send-btn">
-            <span class="material-symbols-outlined">send</span>
-          </button>
+        <!-- CSV Configuration -->
+        <div class="csv-configuration">
+          <div class="section-title">
+            <span class="material-symbols-outlined">settings</span>
+            <h3>CSV Export Configuration</h3>
+          </div>
+          
+          <div class="configuration-options">
+            <div class="option-group">
+              <h4>Include Metadata</h4>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" checked>
+                  <span>Duration</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" checked>
+                  <span>Sample Rate</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" checked>
+                  <span>Timestamp</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox">
+                  <span>Speaker</span>
+                </label>
+              </div>
+            </div>
+            
+            <div class="option-group">
+              <h4>Custom Columns</h4>
+              <div class="custom-columns">
+                <div class="custom-column">
+                  <input type="text" placeholder="Column name" value="Notes">
+                  <button class="remove-column">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <div class="custom-column">
+                  <input type="text" placeholder="Column name" value="Keywords">
+                  <button class="remove-column">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <button class="add-column">
+                  <span class="material-symbols-outlined">add</span>
+                  <span>Add custom column</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="csv-preview">
+            <div class="preview-title">CSV Preview</div>
+            <div class="preview-table">
+              <div class="preview-header">
+                <div class="preview-cell">File</div>
+                <div class="preview-cell">Start</div>
+                <div class="preview-cell">End</div>
+                <div class="preview-cell">Duration</div>
+                <div class="preview-cell">Transcript</div>
+                <div class="preview-cell">Notes</div>
+                <div class="preview-cell">Keywords</div>
+              </div>
+              <div class="preview-row">
+                <div class="preview-cell">Interview_001.mp3</div>
+                <div class="preview-cell">00:00:15</div>
+                <div class="preview-cell">00:00:22</div>
+                <div class="preview-cell">7s</div>
+                <div class="preview-cell">Welcome to our meeting...</div>
+                <div class="preview-cell"></div>
+                <div class="preview-cell">meeting, intro</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="complete-action">
+            <button class="complete-btn">
+              <span class="material-symbols-outlined">check_circle</span>
+              <span>Complete Transcription & Save CSV</span>
+            </button>
+          </div>
         </div>
         
         <div class="chat-footer">
@@ -863,5 +1014,457 @@ body {
   font-size: 12px;
   color: #a0a0a0;
   margin: 4px 0 0;
+}
+
+/* Audio Visualizer and Controls */
+.audio-visualizer-container {
+  background-color: #252526;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.visualizer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid #333;
+}
+
+.file-info {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.visualizer-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.visualizer-btn {
+  background-color: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e1e1e1;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.visualizer-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.visualizer-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.audio-visualizer {
+  height: 160px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #333;
+}
+
+.waveform-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #777;
+}
+
+.audio-controls {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  align-items: center;
+}
+
+.audio-control-btn {
+  background-color: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e1e1e1;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.audio-control-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.audio-control-btn.active {
+  background-color: rgba(76, 110, 245, 0.2);
+  border-color: rgba(76, 110, 245, 0.5);
+  color: var(--accent-blue-lighter);
+}
+
+.audio-timeline {
+  flex: 1;
+  height: 24px;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  position: relative;
+  margin: 0 8px;
+}
+
+.audio-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background-color: rgba(76, 110, 245, 0.3);
+  border-radius: 4px;
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 2px;
+  cursor: pointer;
+}
+
+.marker-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  background-color: var(--accent-blue);
+}
+
+.marker-handle {
+  position: absolute;
+  top: -6px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  background-color: var(--accent-blue);
+  border-radius: 50%;
+}
+
+.segment-tools {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.segment-tool {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #252526;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e1e1e1;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.segment-tool:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Transcription Segments */
+.transcription-segment {
+  background-color: #252526;
+  border-radius: 8px;
+  border-left: 3px solid transparent;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.transcription-segment.completed {
+  border-left-color: #4ade80;
+}
+
+.transcription-segment.active {
+  border-left-color: var(--accent-blue);
+}
+
+.transcription-segment.untranscribed {
+  border-left-color: #f97316;
+  background-color: rgba(37, 37, 38, 0.5);
+}
+
+.segment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.segment-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.segment-timestamp {
+  font-size: 12px;
+  color: #a0a0a0;
+  font-family: monospace;
+}
+
+.edit-btn, .delete-btn, .save-btn {
+  background: transparent;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.edit-btn:hover, .save-btn:hover {
+  color: var(--accent-blue);
+}
+
+.delete-btn:hover {
+  color: #f43f5e;
+}
+
+.save-btn {
+  color: #4ade80;
+}
+
+.segment-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.segment-input {
+  width: 100%;
+  min-height: 80px;
+  background-color: rgba(30, 30, 30, 0.5);
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e1e1e1;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 8px 12px;
+  resize: vertical;
+}
+
+.transcribe-btn {
+  background-color: rgba(76, 110, 245, 0.1);
+  border: 1px solid rgba(76, 110, 245, 0.3);
+  border-radius: 4px;
+  color: #e1e1e1;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.transcribe-btn:hover {
+  background-color: rgba(76, 110, 245, 0.2);
+}
+
+/* CSV Configuration */
+.csv-configuration {
+  background-color: #252526;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.section-title h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.configuration-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.option-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.option-group h4 {
+  font-size: 14px;
+  margin: 0 0 12px;
+  font-weight: 500;
+  color: #a0a0a0;
+}
+
+.checkbox-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 16px;
+  height: 16px;
+}
+
+.custom-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.custom-column {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-column input {
+  flex: 1;
+  padding: 6px 8px;
+  background-color: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e1e1e1;
+  font-size: 13px;
+}
+
+.remove-column {
+  background-color: transparent;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-column:hover {
+  color: #f43f5e;
+}
+
+.add-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 0;
+  background-color: transparent;
+  border: 1px dashed #444;
+  border-radius: 4px;
+  color: #a0a0a0;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.add-column:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #e1e1e1;
+}
+
+.csv-preview {
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.preview-title {
+  font-size: 13px;
+  color: #a0a0a0;
+  margin-bottom: 8px;
+}
+
+.preview-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.preview-header, .preview-row {
+  display: flex;
+  border-bottom: 1px solid #333;
+}
+
+.preview-header {
+  font-weight: 500;
+  font-size: 12px;
+  color: #a0a0a0;
+  padding-bottom: 8px;
+}
+
+.preview-row {
+  font-size: 12px;
+  padding: 8px 0;
+}
+
+.preview-cell {
+  flex: 1;
+  min-width: 80px;
+  padding-right: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.complete-action {
+  display: flex;
+  justify-content: center;
+}
+
+.complete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: var(--accent-blue);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.complete-btn:hover {
+  background-color: var(--accent-blue-lighter);
+}
+
+.complete-btn .material-symbols-outlined {
+  font-size: 20px;
 }
 </style>

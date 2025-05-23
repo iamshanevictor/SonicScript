@@ -5,7 +5,15 @@
   --light-color: #F8F9FA;
   --grey-color: #E9ECEF;
   --success-color: #38B2AC;
-  --font-main: 'Roboto', sans-serif;
+  --accent-blue: #4C6EF5;
+  --accent-blue-lighter: #5C7EFF;
+  --success-green: #4ade80;
+  --warning-orange: #f97316;
+  --danger-red: #f43f5e;
+  --bg-dark: #1e1e1e;
+  --bg-panel: #252526;
+  --border-color: #333;
+  --font-main: 'Inter', sans-serif;
 }
 
 /* Common utility classes */
