@@ -1,19 +1,45 @@
 :root {
-  --primary-color: #4C6EF5;
-  --secondary-color: #A3BFFA;
-  --dark-color: #172B4D;
-  --light-color: #F8F9FA;
-  --grey-color: #E9ECEF;
-  --success-color: #38B2AC;
-  --accent-blue: #4C6EF5;
-  --accent-blue-lighter: #5C7EFF;
-  --success-green: #4ade80;
-  --warning-orange: #f97316;
-  --danger-red: #f43f5e;
-  --bg-dark: #1e1e1e;
-  --bg-panel: #252526;
-  --border-color: #333;
-  --font-main: 'Inter', sans-serif;
+  /* Theme Colors */
+  --bg-dark: #181821;
+  --bg-panel: #232330;
+  --border-color: rgba(255, 255, 255, 0.1);
+  
+  /* Accent Colors */
+  --accent-blue: #4F7EFF;
+  --accent-blue-lighter: #6B8FFF;
+  --accent-blue-dark: #3A65E0;
+  
+  /* Status Colors */
+  --success: #27AE60;
+  --success-light: #2EBD6B;
+  --warning: #F2C94C;
+  --error: #EB5757;
+  --info: #6B8FFF;
+  
+  /* Text Colors */
+  --text-primary: #E1E1E1;
+  --text-secondary: #A0A0A0;
+  --text-tertiary: #777777;
+  
+  /* Hover States */
+  --hover-overlay: rgba(255, 255, 255, 0.1);
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 }
 
 /* Common utility classes */

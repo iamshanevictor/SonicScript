@@ -1,0 +1,245 @@
+/* Audio Visualizer and Controls */
+.audio-visualizer-container {
+  background-color: var(--bg-panel);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.visualizer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.file-info {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e1e1e1;
+}
+
+.visualizer-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.visualizer-btn {
+  background-color: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e1e1e1;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.visualizer-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.visualizer-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.audio-visualizer {
+  height: 180px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(180deg, rgba(30, 30, 40, 0.6) 0%, rgba(20, 20, 30, 0.8) 100%);
+}
+
+.waveform-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.waveform-placeholder .material-symbols-outlined {
+  opacity: 0.7;
+}
+
+.audio-controls {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.audio-control-btn {
+  background-color: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e1e1e1;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.audio-control-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.audio-control-btn.active {
+  background-color: rgba(76, 110, 245, 0.2);
+  border-color: rgba(76, 110, 245, 0.5);
+  color: var(--accent-blue-lighter);
+}
+
+.audio-timeline {
+  flex: 1;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  position: relative;
+  margin: 0 12px;
+  overflow: hidden;
+}
+
+.audio-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(79, 126, 255, 0.6) 0%, rgba(79, 126, 255, 0.8) 100%);
+  border-radius: 6px;
+  box-shadow: 0 0 8px rgba(79, 126, 255, 0.4);
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 2px;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.marker-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  background-color: var(--accent-blue);
+  box-shadow: 0 0 4px rgba(79, 126, 255, 0.8);
+}
+
+.marker-handle {
+  position: absolute;
+  top: -6px;
+  left: -5px;
+  width: 12px;
+  height: 12px;
+  background-color: #fff;
+  border: 2px solid var(--accent-blue);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease;
+}
+
+.timeline-marker:hover .marker-handle {
+  transform: scale(1.2);
+}
+
+.segment-tools {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.segment-tool {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 12px;
+  background-color: var(--bg-panel);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #e1e1e1;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.segment-tool:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.segment-tool .material-symbols-outlined {
+  color: var(--accent-blue);
+}
+
+/* Fix audio control button backgrounds for dark theme */
+.visualizer-controls .visualizer-btn {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px;
+  margin: 0 2px;
+  transition: all 0.2s ease;
+}
+
+.visualizer-controls .visualizer-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.visualizer-controls .visualizer-btn .material-symbols-outlined {
+  background-color: transparent !important;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+}
+
+.audio-controls .audio-control-btn {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  transition: all 0.2s ease;
+}
+
+.audio-controls .audio-control-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.audio-controls .audio-control-btn .material-symbols-outlined {
+  background-color: transparent !important;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 20px;
+}
+
+.audio-controls .audio-control-btn.active {
+  background-color: rgba(79, 126, 255, 0.15);
+  border-color: rgba(79, 126, 255, 0.5);
+  box-shadow: 0 0 8px rgba(79, 126, 255, 0.2);
+}
+
+.audio-controls .audio-control-btn.active .material-symbols-outlined {
+  color: #4F7EFF;
+} 
