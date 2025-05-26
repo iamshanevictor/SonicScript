@@ -231,29 +231,6 @@ onMounted(() => {
               </div>
             </div>
           </div>
-
-          <div class="chat-input">
-            <div class="input-container">
-              <input type="text" placeholder="Start typing..." />
-              <button class="send-btn">
-                <span class="material-symbols-outlined">send</span>
-              </button>
-            </div>
-            <div class="suggestion-chips">
-              <button class="suggestion-chip">
-                How effectively does SonicScript handle background noise?
-              </button>
-              <button class="suggestion-chip">
-                What are the main features?
-              </button>
-            </div>
-          </div>
-
-          <div class="content-footer">
-            <p>
-              SonicScript may be inaccurate; please double check its responses.
-            </p>
-          </div>
         </div>
       </section>
 
@@ -363,8 +340,7 @@ onMounted(() => {
 }
 
 .panel {
-  border-radius: var(--radius-lg);
-  margin: var(--spacing-md);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   overflow: hidden;
   background-color: var(--bg-card);
@@ -685,83 +661,6 @@ onMounted(() => {
 .transcribe-btn:hover {
   background-color: var(--accent-blue);
   color: white;
-}
-
-/* Chat input */
-.chat-input {
-  padding: var(--spacing-lg);
-  border-top: 1px solid var(--border-color);
-}
-
-.input-container {
-  display: flex;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
-}
-
-.input-container input {
-  flex: 1;
-  padding: var(--spacing-md) var(--spacing-lg);
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-size: 14px;
-}
-
-.input-container input:focus {
-  outline: none;
-  border-color: var(--accent-blue-lighter);
-}
-
-.send-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background-color: var(--accent-blue);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.send-btn:hover {
-  background-color: var(--accent-blue-dark);
-}
-
-.suggestion-chips {
-  display: flex;
-  gap: var(--spacing-sm);
-  overflow-x: auto;
-  padding-bottom: var(--spacing-sm);
-}
-
-.suggestion-chip {
-  white-space: nowrap;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: var(--bg-card);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 100px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.suggestion-chip:hover {
-  background-color: var(--hover-overlay);
-  color: var(--text-primary);
-}
-
-.content-footer {
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-top: 1px solid var(--border-color);
-  font-size: 12px;
-  color: var(--text-tertiary);
-  text-align: center;
 }
 
 /* Studio panel styling */

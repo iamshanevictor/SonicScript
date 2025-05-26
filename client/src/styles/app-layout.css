@@ -104,14 +104,14 @@ body {
   flex: 1;
   overflow: hidden;
   width: 100%;
-  padding: var(--spacing-md);
-  gap: var(--spacing-md);
+  padding: var(--spacing-xs);
+  gap: var(--spacing-xs);
   background-color: var(--bg-dark);
 }
 
 /* Panel styling */
 .panel {
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   overflow: hidden;
   background-color: var(--bg-card);
