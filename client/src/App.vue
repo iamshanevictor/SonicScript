@@ -1,16 +1,99 @@
 <script setup>
 // Import the Vue Router
-import { onMounted } from 'vue';
+import { onMounted, ref, computed, watch, onBeforeUnmount } from 'vue';
 import '@/styles/variables.css';
 import '@/styles/app-layout.css';
 
-// Add Material Icons Google Font
+// Panel collapse state
+const sourcesPanelCollapsed = ref(false);
+const studioPanelCollapsed = ref(false);
+
+// Panel width management
+const sourcesWidth = ref('400px');
+const studioWidth = ref('400px');
+const windowWidth = ref(window.innerWidth);
+
+// Update widths based on window size
+const updateWidthsBasedOnScreenSize = () => {
+  let centerSpace = windowWidth.value - 20; // Accounting for padding/gap
+  
+  // Always use 400px for expanded panels
+  if (!sourcesPanelCollapsed.value) {
+    sourcesWidth.value = '400px';
+  } else {
+    sourcesWidth.value = windowWidth.value <= 768 ? '40px' : '60px';
+  }
+  
+  if (!studioPanelCollapsed.value) {
+    studioWidth.value = '400px';
+  } else {
+    studioWidth.value = windowWidth.value <= 768 ? '40px' : '60px';
+  }
+  
+  // Mobile sizes have already been handled above
+};
+
+// Update panel widths when collapsed state changes
+watch(sourcesPanelCollapsed, (isCollapsed) => {
+  if (isCollapsed) {
+    sourcesWidth.value = windowWidth.value <= 768 ? '40px' : '60px';
+  } else {
+    sourcesWidth.value = '400px';  // Changed to 400px
+  }
+});
+
+watch(studioPanelCollapsed, (isCollapsed) => {
+  if (isCollapsed) {
+    studioWidth.value = windowWidth.value <= 768 ? '40px' : '60px';
+  } else {
+    studioWidth.value = '400px';  // Changed to 400px
+  }
+});
+
+// Window resize handler
+const handleResize = () => {
+  windowWidth.value = window.innerWidth;
+  updateWidthsBasedOnScreenSize();
+};
+
+// Watch window width changes to recalculate content panel width
+watch(windowWidth, () => {
+  updateWidthsBasedOnScreenSize();
+});
+
+// Add event listeners for window resize
 onMounted(() => {
+  window.addEventListener('resize', handleResize);
+  
+  // Ensure panels have correct width on initial load
+  if (!sourcesPanelCollapsed.value) {
+    sourcesWidth.value = '400px';
+  }
+  
+  if (!studioPanelCollapsed.value) {
+    studioWidth.value = '400px';
+  }
+  
+  // Update other widths based on screen size
+  updateWidthsBasedOnScreenSize();
+  
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Inter:wght@300;400;500;600;700&display=swap';
   document.head.appendChild(link);
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
+});
+
+const toggleSourcesPanel = () => {
+  sourcesPanelCollapsed.value = !sourcesPanelCollapsed.value;
+};
+
+const toggleStudioPanel = () => {
+  studioPanelCollapsed.value = !studioPanelCollapsed.value;
+};
 </script>
 
 <template>
@@ -38,79 +121,105 @@ onMounted(() => {
 
     <main class="main-content">
       <!-- Left Panel - Sources -->
-      <section class="panel sources-panel">
+      <section 
+        class="panel sources-panel" 
+        :class="{ 'collapsed': sourcesPanelCollapsed }"
+        :style="{ width: sourcesWidth }"
+      >
         <div class="panel-inner">
           <div class="panel-header">
             <h2>Sources</h2>
-            <div class="panel-collapse-btn">
+            <div class="panel-collapse-btn" @click="toggleSourcesPanel">
               <span class="material-symbols-outlined">chevron_left</span>
             </div>
           </div>
 
-          <div class="panel-actions">
-            <button class="panel-action-btn">
-              <span class="material-symbols-outlined">add</span>
-              <span>Add</span>
-            </button>
-            <button class="panel-action-btn">
-              <span class="material-symbols-outlined">search</span>
-              <span>Discover</span>
-            </button>
+          <!-- Icon-only view (visible when collapsed) -->
+          <div class="panel-icon-view" v-if="sourcesPanelCollapsed">
+            <div class="panel-icon-item active">
+              <span class="material-symbols-outlined">description</span>
+            </div>
+            <div class="panel-icon-item">
+              <span class="material-symbols-outlined">mic</span>
+            </div>
+            <div class="panel-icon-item">
+              <span class="material-symbols-outlined">folder</span>
+            </div>
           </div>
 
-          <div class="select-all-row">
-            <span>Select all sources</span>
-            <label class="checkbox">
-              <input type="checkbox" />
-              <span class="checkmark"></span>
-            </label>
-          </div>
+          <!-- Full panel content (hidden when collapsed) -->
+          <div v-else>
+            <div class="panel-actions">
+              <button class="panel-action-btn">
+                <span class="material-symbols-outlined">add</span>
+                <span>Add</span>
+              </button>
+              <button class="panel-action-btn">
+                <span class="material-symbols-outlined">search</span>
+                <span>Discover</span>
+              </button>
+            </div>
 
-          <div class="source-list">
-            <div class="source-item">
-              <span
-                class="source-type material-symbols-outlined"
-                style="color: var(--accent-red)"
-                >mic</span
-              >
-              <span class="source-name">Interview_001.mp3</span>
+            <div class="select-all-row">
+              <span>Select all sources</span>
               <label class="checkbox">
-                <input type="checkbox" checked />
+                <input type="checkbox" />
                 <span class="checkmark"></span>
               </label>
             </div>
 
-            <div class="source-item">
-              <span
-                class="source-type material-symbols-outlined"
-                style="color: var(--accent-blue)"
-                >description</span
-              >
-              <span class="source-name">Meeting_Notes.mp3</span>
-              <label class="checkbox">
-                <input type="checkbox" checked />
-                <span class="checkmark"></span>
-              </label>
-            </div>
+            <div class="source-list">
+              <div class="source-item">
+                <span
+                  class="source-type material-symbols-outlined"
+                  style="color: var(--accent-red)"
+                  >mic</span
+                >
+                <span class="source-name">Interview_001.mp3</span>
+                <label class="checkbox">
+                  <input type="checkbox" checked />
+                  <span class="checkmark"></span>
+                </label>
+              </div>
 
-            <div class="source-item">
-              <span
-                class="source-type material-symbols-outlined"
-                style="color: var(--accent-blue)"
-                >description</span
-              >
-              <span class="source-name">Lecture_Series.mp3</span>
-              <label class="checkbox">
-                <input type="checkbox" checked />
-                <span class="checkmark"></span>
-              </label>
+              <div class="source-item">
+                <span
+                  class="source-type material-symbols-outlined"
+                  style="color: var(--accent-blue)"
+                  >description</span
+                >
+                <span class="source-name">Meeting_Notes.mp3</span>
+                <label class="checkbox">
+                  <input type="checkbox" checked />
+                  <span class="checkmark"></span>
+                </label>
+              </div>
+
+              <div class="source-item">
+                <span
+                  class="source-type material-symbols-outlined"
+                  style="color: var(--accent-blue)"
+                  >description</span
+                >
+                <span class="source-name">Lecture_Series.mp3</span>
+                <label class="checkbox">
+                  <input type="checkbox" checked />
+                  <span class="checkmark"></span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Center Panel - Content -->
-      <section class="panel content-panel">
+      <section 
+        class="panel content-panel" 
+        :style="{ 
+          flex: (sourcesPanelCollapsed || studioPanelCollapsed) ? '1 1 auto' : '1',
+          flexGrow: sourcesPanelCollapsed && studioPanelCollapsed ? 3 : (sourcesPanelCollapsed || studioPanelCollapsed ? 2 : 1)
+        }"
+      >
         <div class="panel-inner">
           <div class="panel-header">
             <h2>Chat</h2>
@@ -235,96 +344,116 @@ onMounted(() => {
       </section>
 
       <!-- Right Panel - Studio -->
-      <section class="panel studio-panel">
+      <section 
+        class="panel studio-panel" 
+        :class="{ 'collapsed': studioPanelCollapsed }"
+        :style="{ width: studioWidth }"
+      >
         <div class="panel-inner">
           <div class="panel-header">
             <h2>Studio</h2>
-            <div class="panel-collapse-btn">
+            <div class="panel-collapse-btn" @click="toggleStudioPanel">
               <span class="material-symbols-outlined">chevron_right</span>
             </div>
           </div>
 
-          <!-- CSV Export Configuration -->
-          <div class="studio-section">
-            <div class="studio-header">CSV Export</div>
+          <!-- Icon-only view (visible when collapsed) -->
+          <div class="panel-icon-view" v-show="studioPanelCollapsed">
+            <div class="panel-icon-item active">
+              <span class="material-symbols-outlined">tune</span>
+            </div>
+            <div class="panel-icon-item">
+              <span class="material-symbols-outlined">note</span>
+            </div>
+            <div class="panel-icon-item">
+              <span class="material-symbols-outlined">analytics</span>
+            </div>
+          </div>
 
-            <div class="section-content">
-              <div class="option-group">
-                <h4>Include Metadata</h4>
-                <div class="checkbox-group">
-                  <label class="checkbox-label">
-                    <input type="checkbox" checked />
-                    <span>Duration</span>
-                  </label>
-                  <label class="checkbox-label">
-                    <input type="checkbox" checked />
-                    <span>Sample Rate</span>
-                  </label>
-                  <label class="checkbox-label">
-                    <input type="checkbox" checked />
-                    <span>Timestamp</span>
-                  </label>
-                  <label class="checkbox-label">
-                    <input type="checkbox" />
-                    <span>Speaker</span>
-                  </label>
+          <!-- Full panel content (hidden when collapsed) -->
+          <div v-show="!studioPanelCollapsed">
+            <!-- CSV Export Configuration -->
+            <div class="studio-section">
+              <div class="studio-header">CSV Export</div>
+
+              <div class="section-content">
+                <div class="option-group">
+                  <h4>Include Metadata</h4>
+                  <div class="checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" checked />
+                      <span>Duration</span>
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" checked />
+                      <span>Sample Rate</span>
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" checked />
+                      <span>Timestamp</span>
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" />
+                      <span>Speaker</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <div class="option-group">
-                <h4>Custom Columns</h4>
-                <div class="custom-columns">
-                  <div class="custom-column">
-                    <input
-                      type="text"
-                      placeholder="Column name"
-                      value="Notes"
-                    />
-                    <button class="remove-btn">
-                      <span class="material-symbols-outlined">close</span>
+                <div class="option-group">
+                  <h4>Custom Columns</h4>
+                  <div class="custom-columns">
+                    <div class="custom-column">
+                      <input
+                        type="text"
+                        placeholder="Column name"
+                        value="Notes"
+                      />
+                      <button class="remove-btn">
+                        <span class="material-symbols-outlined">close</span>
+                      </button>
+                    </div>
+                    <div class="custom-column">
+                      <input
+                        type="text"
+                        placeholder="Column name"
+                        value="Keywords"
+                      />
+                      <button class="remove-btn">
+                        <span class="material-symbols-outlined">close</span>
+                      </button>
+                    </div>
+                    <button class="add-column-btn">
+                      <span class="material-symbols-outlined">add_circle</span>
+                      <span>Add column</span>
                     </button>
                   </div>
-                  <div class="custom-column">
-                    <input
-                      type="text"
-                      placeholder="Column name"
-                      value="Keywords"
-                    />
-                    <button class="remove-btn">
-                      <span class="material-symbols-outlined">close</span>
-                    </button>
-                  </div>
-                  <button class="add-column-btn">
-                    <span class="material-symbols-outlined">add_circle</span>
-                    <span>Add column</span>
-                  </button>
                 </div>
-              </div>
 
-              <div class="preview-container">
-                <h4>CSV Preview</h4>
-                <div class="preview-table">
-                  <div class="preview-row header">
-                    <div class="preview-cell">File</div>
-                    <div class="preview-cell">Start</div>
-                    <div class="preview-cell">End</div>
-                    <div class="preview-cell">Transcript</div>
-                    <div class="preview-cell">Keywords</div>
-                  </div>
-                  <div class="preview-row">
-                    <div class="preview-cell">Interview_001.mp3</div>
-                    <div class="preview-cell">00:00:15</div>
-                    <div class="preview-cell">00:00:22</div>
-                    <div class="preview-cell">Welcome to our...</div>
-                    <div class="preview-cell">meeting, intro</div>
+                <div class="preview-container">
+                  <h4>CSV Preview</h4>
+                  <div class="preview-table">
+                    <div class="preview-row header">
+                      <div class="preview-cell">File</div>
+                      <div class="preview-cell">Start</div>
+                      <div class="preview-cell">End</div>
+                      <div class="preview-cell">Transcript</div>
+                      <div class="preview-cell">Keywords</div>
+                    </div>
+                    <div class="preview-row">
+                      <div class="preview-cell">Interview_001.mp3</div>
+                      <div class="preview-cell">00:00:15</div>
+                      <div class="preview-cell">00:00:22</div>
+                      <div class="preview-cell">Welcome to our...</div>
+                      <div class="preview-cell">meeting, intro</div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button class="export-btn">
-                <span class="material-symbols-outlined">task_alt</span>
-                <span>Save CSV</span>
-              </button>
+                <button class="export-btn">
+                  <span class="material-symbols-outlined">task_alt</span>
+                  <span>Save CSV</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -419,6 +548,54 @@ onMounted(() => {
   color: var(--text-tertiary);
   font-size: 13px;
   border-bottom: 1px solid var(--divider-color);
+}
+
+.checkbox {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checkbox input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.checkbox input:checked ~ .checkmark {
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox input:checked ~ .checkmark:after {
+  display: block;
 }
 
 .source-item {
@@ -837,5 +1014,14 @@ onMounted(() => {
 .export-btn:hover {
   background-color: var(--success-light);
   box-shadow: var(--shadow-md);
+}
+
+/* Icon view styles */
+.panel-icon-view {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
 }
 </style>

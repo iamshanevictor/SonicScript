@@ -104,9 +104,10 @@ body {
   flex: 1;
   overflow: hidden;
   width: 100%;
-  padding: var(--spacing-xs);
-  gap: var(--spacing-xs);
+  padding: 2px;
+  gap: 2px;
   background-color: var(--bg-dark);
+  justify-content: space-between;
 }
 
 /* Panel styling */
@@ -117,225 +118,219 @@ body {
   background-color: var(--bg-card);
   display: flex;
   flex-direction: column;
+  margin: 0;
+  padding: 0;
 }
 
 /* Left Panel - Sources */
 .sources-panel {
-  width: 280px;
+  width: 400px;
   flex-shrink: 0;
   transition: width 0.3s ease;
+  overflow: hidden;
 }
 
 .sources-panel.collapsed {
-  width: 60px;
+  width: 60px !important;
+  min-width: 60px !important;
 }
 
-.sources-header {
+.sources-panel.collapsed .panel-inner > *:not(.panel-header) {
+  display: none;
+}
+
+.sources-panel.collapsed .source-name,
+.sources-panel.collapsed .panel-header h2 {
+  display: none;
+}
+
+.sources-panel.collapsed .panel-collapse-btn {
+  transform: rotate(180deg);
+}
+
+/* Icon-only view for collapsed panel */
+.sources-panel.collapsed .panel-icon-view {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.sources-header h2 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-  color: var(--text-primary);
-}
-
-.collapse-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  transition: color var(--transition-fast);
-}
-
-.collapse-btn:hover {
-  color: var(--text-primary);
-}
-
-.action-group {
-  display: flex;
-  gap: var(--spacing-sm);
   padding: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 
-.action-btn-outlined {
-  flex: 1;
+.panel-icon-item {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
   color: var(--text-secondary);
-  font-size: 13px;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.action-btn-outlined:hover {
+.panel-icon-item:hover {
   background-color: var(--hover-overlay);
-  border-color: var(--accent-blue-lighter);
   color: var(--text-primary);
 }
 
-.select-all {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm) var(--spacing-lg);
-  font-size: 13px;
-  color: var(--text-tertiary);
-}
-
-.checkbox {
-  position: relative;
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.checkbox input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.checkmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 16px;
-  height: 16px;
-  background-color: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
-}
-
-.checkbox input:checked ~ .checkmark {
+.panel-icon-item.active {
   background-color: var(--accent-blue);
-  border-color: var(--accent-blue);
-}
-
-.checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
-  left: 5px;
-  top: 2px;
-  width: 4px;
-  height: 8px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.checkbox input:checked ~ .checkmark:after {
-  display: block;
-}
-
-.source-list {
-  overflow-y: auto;
-  padding: var(--spacing-sm) 0;
-}
-
-.source-item {
-  display: flex;
-  align-items: center;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-bottom: 1px solid var(--divider-color);
-  transition: background-color var(--transition-fast);
-}
-
-.source-item:hover {
-  background-color: var(--hover-overlay);
-}
-
-.source-type {
-  margin-right: var(--spacing-md);
-  font-size: 20px;
-}
-
-.source-name {
-  flex: 1;
-  font-size: 14px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color var(--transition-fast);
-}
-
-.source-item:hover .source-name {
-  color: var(--text-primary);
+  color: white;
 }
 
 /* Content panel */
 .content-panel {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+  width: 100%; /* Ensure it takes full available width */
+}
+
+/* When side panels are collapsed, allow content panel to grow more */
+.sources-panel.collapsed ~ .content-panel {
+  flex-grow: 2;
+}
+
+.content-panel ~ .studio-panel.collapsed {
+  flex-grow: 2;
+}
+
+/* When both side panels are collapsed, allow content panel to grow even more */
+.sources-panel.collapsed ~ .content-panel ~ .studio-panel.collapsed {
+  flex-grow: 3;
 }
 
 /* Studio panel */
 .studio-panel {
-  width: 320px;
+  width: 400px;
   flex-shrink: 0;
   transition: width 0.3s ease;
+  overflow: hidden;
 }
 
 .studio-panel.collapsed {
-  width: 60px;
+  width: 60px !important;
+  min-width: 60px !important;
+}
+
+/* Fix for studio panel collapse issue - increasing specificity */
+.main-content .studio-panel.collapsed .panel-inner > *:not(.panel-header) {
+  display: none !important;
+}
+
+.main-content .studio-panel.collapsed .studio-header,
+.main-content .studio-panel.collapsed .panel-header h2 {
+  display: none !important;
+}
+
+.main-content .studio-panel.collapsed .panel-collapse-btn {
+  transform: rotate(180deg) !important;
+}
+
+/* Icon-only view for collapsed studio panel */
+.main-content .studio-panel.collapsed .panel-icon-view {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-md);
+  gap: var(--spacing-lg);
+}
+
+/* Collapsed state for ultra-minimal view */
+.sources-panel.ultra-collapsed,
+.studio-panel.ultra-collapsed {
+  width: 40px;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.sources-panel.ultra-collapsed .panel-header,
+.studio-panel.ultra-collapsed .panel-header {
+  padding: var(--spacing-sm);
+  justify-content: center;
 }
 
 /* Responsive behavior */
 @media (max-width: 1200px) {
   .sources-panel {
-    width: 240px;
+    width: 400px !important;
+  }
+  
+  .sources-panel.collapsed {
+    width: 60px !important;
   }
   
   .studio-panel {
-    width: 280px;
+    width: 400px !important;
+  }
+  
+  .studio-panel.collapsed {
+    width: 60px !important;
+  }
+  
+  .content-panel {
+    /* Remove max-width */
+  }
+  
+  /* Adjust max-width for collapsed panels at this breakpoint */
+  .sources-panel.collapsed ~ .content-panel,
+  .content-panel ~ .studio-panel.collapsed {
+    /* Remove max-width */
+  }
+  
+  .sources-panel.collapsed ~ .content-panel ~ .studio-panel.collapsed {
+    /* Remove max-width */
   }
 }
 
 @media (max-width: 768px) {
   .main-content {
-    padding: var(--spacing-sm);
-    gap: var(--spacing-sm);
+    padding: 2px; /* Match the desktop padding */
+    gap: 2px;
   }
 
   .sources-panel.collapsed,
   .studio-panel.collapsed {
-    width: 0;
-    padding: 0;
-    margin: 0;
-    flex-basis: 0;
+    width: 40px !important;
+    min-width: 40px !important;
+  }
+  
+  .content-panel {
+    max-width: 100%; /* Allow full width on small screens */
+  }
+  
+  /* When only one panel is collapsed on mobile */
+  .sources-panel.collapsed ~ .content-panel,
+  .content-panel ~ .studio-panel.collapsed {
+    max-width: 100%;
+  }
+  
+  /* When both panels are collapsed on mobile */
+  .sources-panel.collapsed ~ .content-panel ~ .studio-panel.collapsed {
+    max-width: 100%;
   }
   
   .sources-panel:not(.collapsed) {
     position: absolute;
-    left: var(--spacing-sm);
-    top: calc(60px + var(--spacing-sm));
-    bottom: var(--spacing-sm);
+    left: var(--spacing-xs);
+    top: calc(60px + var(--spacing-xs));
+    bottom: var(--spacing-xs);
     z-index: 100;
     box-shadow: var(--shadow-lg);
+    width: 280px !important;
   }
   
   .studio-panel:not(.collapsed) {
     position: absolute;
-    right: var(--spacing-sm);
-    top: calc(60px + var(--spacing-sm));
-    bottom: var(--spacing-sm);
+    right: var(--spacing-xs);
+    top: calc(60px + var(--spacing-xs));
+    bottom: var(--spacing-xs);
     z-index: 100;
     box-shadow: var(--shadow-lg);
+    width: 280px !important;
   }
 }
 
