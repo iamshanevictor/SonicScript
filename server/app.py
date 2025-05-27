@@ -5,6 +5,21 @@ from werkzeug.utils import secure_filename
 from pydub import AudioSegment
 import uuid
 
+# Set FFmpeg path explicitly - try both common locations
+try:
+    # Try to find ffmpeg in common locations
+    if os.path.exists("C:\\ffmpeg\\bin\\ffmpeg.exe"):
+        AudioSegment.converter = "C:\\ffmpeg\\bin\\ffmpeg.exe"
+    elif os.path.exists("C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe"):
+        AudioSegment.converter = "C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe"
+    elif os.path.exists("D:\\ffmpeg\\bin\\ffmpeg.exe"):
+        AudioSegment.converter = "D:\\ffmpeg\\bin\\ffmpeg.exe"
+    elif os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg.exe")):
+        AudioSegment.converter = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ffmpeg.exe")
+    print(f"Using FFmpeg at: {AudioSegment.converter}")
+except Exception as e:
+    print(f"Error setting FFmpeg path: {str(e)}")
+
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -102,6 +117,32 @@ def cut_audio():
 @app.route('/api/processed/<filename>')
 def get_processed_audio(filename):
     return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
+
+@app.route('/api/check_ffmpeg')
+def check_ffmpeg():
+    """Diagnostic endpoint to check FFmpeg configuration"""
+    import shutil
+    import subprocess
+    
+    response = {
+        "pydub_converter": getattr(AudioSegment, "converter", "Not set"),
+        "ffmpeg_in_path": shutil.which("ffmpeg"),
+        "environment_path": os.environ.get("PATH", ""),
+    }
+    
+    # Try to run ffmpeg directly to check version
+    try:
+        result = subprocess.run(["ffmpeg", "-version"], 
+                               capture_output=True, 
+                               text=True, 
+                               timeout=5)
+        response["ffmpeg_version"] = result.stdout.split('\n')[0] if result.stdout else "Unknown"
+        response["ffmpeg_available"] = True
+    except Exception as e:
+        response["ffmpeg_error"] = str(e)
+        response["ffmpeg_available"] = False
+    
+    return jsonify(response)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000) 

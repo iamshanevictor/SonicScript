@@ -4,80 +4,38 @@ import { onMounted, ref, computed, watch, onBeforeUnmount } from 'vue';
 import '@/styles/variables.css';
 import '@/styles/app-layout.css';
 import '@/styles/app-component.css';
+import SourceItem from './components/SourceItem.vue';
+import AudioPlayer from './components/AudioPlayer.vue';
+import WaveformPlayer from './components/WaveformPlayer.vue';
 
 // Panel collapse state
 const sourcesPanelCollapsed = ref(false);
 const studioPanelCollapsed = ref(false);
 
-// Panel width management
-const sourcesWidth = ref('400px');
-const studioWidth = ref('400px');
+// Window size tracking
 const windowWidth = ref(window.innerWidth);
 
-// Update widths based on window size
-const updateWidthsBasedOnScreenSize = () => {
-  let centerSpace = windowWidth.value - 20; // Accounting for padding/gap
-  
-  // Always use 400px for expanded panels
-  if (!sourcesPanelCollapsed.value) {
-    sourcesWidth.value = '400px';
-  } else {
-    sourcesWidth.value = windowWidth.value <= 768 ? '40px' : '60px';
-  }
-  
-  if (!studioPanelCollapsed.value) {
-    studioWidth.value = '400px';
-  } else {
-    studioWidth.value = windowWidth.value <= 768 ? '40px' : '60px';
-  }
-  
-  // Mobile sizes have already been handled above
-};
+// Sample source items
+const sources = ref([
+  { id: 1, name: 'Interview_001.mp3', type: 'audio', selected: false, url: null },
+  { id: 2, name: 'Meeting_Notes.mp3', type: 'document', selected: false, url: null },
+  { id: 3, name: 'Lecture_Series.mp3', type: 'document', selected: false, url: null }
+]);
 
-// Update panel widths when collapsed state changes
-watch(sourcesPanelCollapsed, (isCollapsed) => {
-  if (isCollapsed) {
-    sourcesWidth.value = windowWidth.value <= 768 ? '40px' : '60px';
-  } else {
-    sourcesWidth.value = '400px';  // Changed to 400px
-  }
-});
-
-watch(studioPanelCollapsed, (isCollapsed) => {
-  if (isCollapsed) {
-    studioWidth.value = windowWidth.value <= 768 ? '40px' : '60px';
-  } else {
-    studioWidth.value = '400px';  // Changed to 400px
-  }
-});
+// Selected audio source for waveform display
+const selectedAudioSource = ref(null);
+const audioSegments = ref([]);
 
 // Window resize handler
 const handleResize = () => {
   windowWidth.value = window.innerWidth;
-  updateWidthsBasedOnScreenSize();
 };
-
-// Watch window width changes to recalculate content panel width
-watch(windowWidth, () => {
-  updateWidthsBasedOnScreenSize();
-});
 
 // Add event listeners for window resize
 onMounted(() => {
   window.addEventListener('resize', handleResize);
   
-  // Ensure panels have correct width on initial load
-  if (!sourcesPanelCollapsed.value) {
-    sourcesWidth.value = '400px';
-  }
-  
-  if (!studioPanelCollapsed.value) {
-    studioWidth.value = '400px';
-  }
-  
-  // Update other widths based on screen size
-  updateWidthsBasedOnScreenSize();
-  
+  // Add Google Material Symbols font
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Inter:wght@300;400;500;600;700&display=swap';
@@ -94,6 +52,148 @@ const toggleSourcesPanel = () => {
 
 const toggleStudioPanel = () => {
   studioPanelCollapsed.value = !studioPanelCollapsed.value;
+};
+
+// Handle source operations
+const handleSourceSelect = (id, selected) => {
+  const index = sources.value.findIndex(source => source.id === id);
+  if (index !== -1) {
+    sources.value[index].selected = selected;
+    
+    // If selected and it's an audio file, set it as the current audio source
+    if (selected && sources.value[index].type === 'audio' && sources.value[index].url) {
+      selectedAudioSource.value = sources.value[index];
+    } else if (!selected && selectedAudioSource.value && selectedAudioSource.value.id === id) {
+      // If deselected and it was the current audio source, clear it
+      selectedAudioSource.value = null;
+    }
+  }
+};
+
+const handleSourceEdit = (id) => {
+  console.log(`Edit source ${id}`);
+};
+
+const handleSourceDelete = (id) => {
+  // Find the index of the source to delete
+  const index = sources.value.findIndex(source => source.id === id);
+  
+  // If the source exists, remove it from the array
+  if (index !== -1) {
+    // If it's the selected audio source, clear it
+    if (selectedAudioSource.value && selectedAudioSource.value.id === id) {
+      selectedAudioSource.value = null;
+      audioSegments.value = [];
+    }
+    
+    sources.value.splice(index, 1);
+    console.log(`Deleted source ${id}`);
+  }
+};
+
+// Format time in mm:ss format
+const formatTime = (seconds) => {
+  if (isNaN(seconds)) return '00:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Handle segment creation from WaveformPlayer
+const handleSegmentCreated = (segment) => {
+  audioSegments.value.push({
+    ...segment,
+    transcription: ''
+  });
+  console.log('Segment created:', segment);
+};
+
+// Handle segment deletion from WaveformPlayer
+const handleSegmentDeleted = (segment) => {
+  console.log('Segment deleted:', segment);
+};
+
+// Remove a segment from the transcription list
+const removeSegment = (index) => {
+  if (index >= 0 && index < audioSegments.value.length) {
+    audioSegments.value.splice(index, 1);
+  }
+};
+
+// File upload handling
+const isUploading = ref(false);
+const uploadProgress = ref(0);
+const uploadError = ref(null);
+
+const handleFileUpload = async () => {
+  // Create a file input element
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.mp3';
+  
+  // Handle file selection
+  fileInput.onchange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+      isUploading.value = true;
+      uploadError.value = null;
+      uploadProgress.value = 0;
+      
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Upload the file
+      const response = await fetch('http://localhost:5000/api/upload', {
+        method: 'POST',
+        body: formData,
+        // Track upload progress
+        onUploadProgress: (progressEvent) => {
+          uploadProgress.value = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+      
+      const data = await response.json();
+      
+      // Add the new source to the list
+      const newSource = {
+        id: sources.value.length + 1,
+        name: data.originalName,
+        type: 'audio',
+        selected: true,
+        url: `http://localhost:5000${data.url}`
+      };
+      
+      // Deselect any previously selected sources
+      sources.value.forEach(source => {
+        source.selected = false;
+      });
+      
+      sources.value.push(newSource);
+      
+      // Set as the current audio source
+      selectedAudioSource.value = newSource;
+      
+      console.log('File uploaded successfully:', data);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      uploadError.value = error.message;
+    } finally {
+      isUploading.value = false;
+    }
+  };
+  
+  // Trigger the file input click
+  fileInput.click();
 };
 </script>
 
@@ -122,21 +222,17 @@ const toggleStudioPanel = () => {
 
     <main class="main-content">
       <!-- Left Panel - Sources -->
-      <section 
-        class="panel sources-panel" 
-        :class="{ 'collapsed': sourcesPanelCollapsed }"
-        :style="{ width: sourcesWidth }"
-      >
+      <section class="panel sources-panel" :class="{ 'collapsed': sourcesPanelCollapsed }">
         <div class="panel-inner">
           <div class="panel-header">
-            <h2>Sources</h2>
+            <h2 v-if="!sourcesPanelCollapsed">Sources</h2>
             <div class="panel-collapse-btn" @click="toggleSourcesPanel">
-              <span class="material-symbols-outlined">chevron_left</span>
+              <span class="material-symbols-outlined">{{ sourcesPanelCollapsed ? 'chevron_right' : 'chevron_left' }}</span>
             </div>
           </div>
 
-          <!-- Icon-only view (visible when collapsed) -->
-          <div class="panel-icon-view" v-if="sourcesPanelCollapsed">
+          <!-- Collapsed View -->
+          <div v-if="sourcesPanelCollapsed" class="panel-icon-view">
             <div class="panel-icon-item active">
               <span class="material-symbols-outlined">description</span>
             </div>
@@ -148,8 +244,8 @@ const toggleStudioPanel = () => {
             </div>
           </div>
 
-          <!-- Full panel content (hidden when collapsed) -->
-          <div v-else>
+          <!-- Expanded View -->
+          <div v-else class="panel-content">
             <div class="panel-actions">
               <button class="panel-action-btn">
                 <span class="material-symbols-outlined">add</span>
@@ -162,60 +258,37 @@ const toggleStudioPanel = () => {
             </div>
 
             <div class="source-list">
-              <div class="source-item">
-                <span
-                  class="source-type material-symbols-outlined"
-                  style="color: var(--accent-red)"
-                  >mic</span
-                >
-                <span class="source-name">Interview_001.mp3</span>
-              </div>
-
-              <div class="source-item">
-                <span
-                  class="source-type material-symbols-outlined"
-                  style="color: var(--accent-blue)"
-                  >description</span
-                >
-                <span class="source-name">Meeting_Notes.mp3</span>
-              </div>
-
-              <div class="source-item">
-                <span
-                  class="source-type material-symbols-outlined"
-                  style="color: var(--accent-blue)"
-                  >description</span
-                >
-                <span class="source-name">Lecture_Series.mp3</span>
-              </div>
+              <!-- Using our new SourceItem component -->
+              <SourceItem 
+                v-for="source in sources" 
+                :key="source.id"
+                :name="source.name"
+                :type="source.type"
+                :selected="source.selected"
+                @select="(selected) => handleSourceSelect(source.id, selected)"
+                @edit="handleSourceEdit(source.id)"
+                @delete="handleSourceDelete(source.id)"
+              />
             </div>
           </div>
         </div>
       </section>
 
       <!-- Center Panel - Content -->
-      <section 
-        class="panel content-panel" 
-        :style="{ 
-          flex: (sourcesPanelCollapsed || studioPanelCollapsed) ? '1 1 auto' : '1',
-          flexGrow: sourcesPanelCollapsed && studioPanelCollapsed ? 3 : (sourcesPanelCollapsed || studioPanelCollapsed ? 2 : 1)
-        }"
-      >
+      <section class="panel content-panel">
         <div class="panel-inner">
           <div class="panel-header">
             <h2>Chat</h2>
           </div>
-
-          <div class="content-panel-inner">
-            <div class="content-header">
-              <div class="content-title">
-                <div class="app-icon">
-                  <span class="material-symbols-outlined">keyboard_voice</span>
-                </div>
-                <div>
-                  <h1>SonicScript: Audio Transcription Tool</h1>
-                  <p>2 sources</p>
-                </div>
+          
+          <div class="panel-content">
+            <div class="content-title">
+              <div class="app-icon">
+                <span class="material-symbols-outlined">keyboard_voice</span>
+              </div>
+              <div>
+                <h1>SonicScript: Audio Transcription Tool</h1>
+                <p>2 sources</p>
               </div>
             </div>
 
@@ -229,9 +302,9 @@ const toggleStudioPanel = () => {
             </div>
 
             <div class="action-buttons">
-              <button class="primary-action-btn">
+              <button class="primary-action-btn" @click="handleFileUpload" :disabled="isUploading">
                 <span class="material-symbols-outlined">upload_file</span>
-                <span>Upload Audio</span>
+                <span>{{ isUploading ? 'Uploading...' : 'Upload Audio' }}</span>
               </button>
               <button class="primary-action-btn">
                 <span class="material-symbols-outlined">download</span>
@@ -254,70 +327,46 @@ const toggleStudioPanel = () => {
               </button>
             </div>
 
+            <!-- Audio Waveform Player -->
+            <div v-if="selectedAudioSource" class="audio-waveform-section">
+              <h3 class="section-title">Audio Waveform</h3>
+              <WaveformPlayer 
+                :audioUrl="selectedAudioSource.url" 
+                @segmentCreated="handleSegmentCreated"
+                @segmentDeleted="handleSegmentDeleted"
+              />
+            </div>
+            
+            <div v-else class="no-audio-selected">
+              <div class="empty-state">
+                <span class="material-symbols-outlined empty-icon">graphic_eq</span>
+                <p>Select an audio source from the Sources panel or upload a new audio file to visualize its waveform.</p>
+              </div>
+            </div>
+            
             <!-- Transcription Segments -->
-            <div class="transcription-segments">
-              <div class="segment completed">
+            <div v-if="audioSegments.length > 0" class="transcription-segments">
+              <h3 class="section-title">Transcription Segments</h3>
+              <div v-for="(segment, index) in audioSegments" :key="index" class="segment completed">
                 <div class="segment-header">
-                  <div class="segment-time">00:00:15 - 00:00:22</div>
+                  <div class="segment-time">{{ formatTime(segment.start) }} - {{ formatTime(segment.end) }}</div>
                   <div class="segment-actions">
                     <button class="segment-btn">
                       <span class="material-symbols-outlined">edit_note</span>
                     </button>
-                    <button class="segment-btn">
+                    <button class="segment-btn" @click="removeSegment(index)">
                       <span class="material-symbols-outlined">delete</span>
                     </button>
                   </div>
                 </div>
-                <div class="segment-content">
-                  Welcome to our meeting about the quarterly results. Today
-                  we'll be discussing the performance of our key products.
-                </div>
-              </div>
-
-              <div class="segment completed">
-                <div class="segment-header">
-                  <div class="segment-time">00:00:24 - 00:00:36</div>
-                  <div class="segment-actions">
-                    <button class="segment-btn">
-                      <span class="material-symbols-outlined">edit_note</span>
-                    </button>
-                    <button class="segment-btn">
-                      <span class="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
-                </div>
-                <div class="segment-content">
-                  As you can see from the charts, our main product line has
-                  shown a 15% increase in revenue compared to last quarter.
-                </div>
-              </div>
-
-              <div class="segment active">
-                <div class="segment-header">
-                  <div class="segment-time">00:00:40 - 00:00:58</div>
-                  <div class="segment-actions">
-                    <button class="segment-btn save">
-                      <span class="material-symbols-outlined">save</span>
-                    </button>
-                    <button class="segment-btn">
-                      <span class="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
+                <div class="segment-content" v-if="segment.transcription">
+                  {{ segment.transcription }}
                 </div>
                 <textarea
+                  v-else
                   class="segment-input"
                   placeholder="Type what you hear in this segment..."
-                >We've also seen significant growth in our new market segments, particularly in the enterprise customer category which has grown by</textarea>
-              </div>
-
-              <div class="segment untranscribed">
-                <div class="segment-header">
-                  <div class="segment-time">00:01:02 - 00:01:14</div>
-                  <button class="transcribe-btn">
-                    <span class="material-symbols-outlined">record_voice_over</span>
-                    <span>Start transcribing</span>
-                  </button>
-                </div>
+                ></textarea>
               </div>
             </div>
           </div>
@@ -325,21 +374,17 @@ const toggleStudioPanel = () => {
       </section>
 
       <!-- Right Panel - Studio -->
-      <section 
-        class="panel studio-panel" 
-        :class="{ 'collapsed': studioPanelCollapsed }"
-        :style="{ width: studioWidth }"
-      >
+      <section class="panel studio-panel" :class="{ 'collapsed': studioPanelCollapsed }">
         <div class="panel-inner">
           <div class="panel-header">
-            <h2>Studio</h2>
+            <h2 v-if="!studioPanelCollapsed">Studio</h2>
             <div class="panel-collapse-btn" @click="toggleStudioPanel">
-              <span class="material-symbols-outlined">chevron_right</span>
+              <span class="material-symbols-outlined">{{ studioPanelCollapsed ? 'chevron_left' : 'chevron_right' }}</span>
             </div>
           </div>
 
-          <!-- Icon-only view (visible when collapsed) -->
-          <div class="panel-icon-view" v-show="studioPanelCollapsed">
+          <!-- Collapsed View -->
+          <div v-if="studioPanelCollapsed" class="panel-icon-view">
             <div class="panel-icon-item active">
               <span class="material-symbols-outlined">tune</span>
             </div>
@@ -351,8 +396,8 @@ const toggleStudioPanel = () => {
             </div>
           </div>
 
-          <!-- Full panel content (hidden when collapsed) -->
-          <div v-show="!studioPanelCollapsed">
+          <!-- Expanded View -->
+          <div v-else class="panel-content">
             <!-- CSV Export Configuration -->
             <div class="studio-section">
               <div class="studio-header">CSV Export</div>
@@ -442,3 +487,283 @@ const toggleStudioPanel = () => {
     </main>
   </div>
 </template>
+
+<style scoped>
+/* App-specific scoped styles */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+}
+
+.top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background-color: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
+  height: 60px;
+}
+
+.app-branding {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  color: var(--accent-primary);
+  font-size: 24px;
+}
+
+.app-title {
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.action-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.panel {
+  height: 100%;
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.panel-inner {
+  height: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.panel-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.panel-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.panel-collapse-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sources-panel {
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+}
+
+.sources-panel.collapsed .panel-collapse-btn span {
+  transform: rotate(180deg);
+}
+
+.studio-panel {
+  background-color: var(--bg-panel);
+  border-left: 1px solid var(--border-color);
+}
+
+.studio-panel.collapsed .panel-collapse-btn span {
+  transform: rotate(180deg);
+}
+
+.content-panel {
+  background-color: var(--bg-content);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.panel-icon-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.panel-icon-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.panel-icon-item:hover, .panel-icon-item.active {
+  background-color: var(--bg-selected);
+  color: var(--accent-primary);
+}
+
+.panel-actions {
+  margin-bottom: 16px;
+}
+
+.panel-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--accent-primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+  justify-content: center;
+}
+
+.panel-action-btn:hover {
+  background-color: var(--accent-primary-hover);
+}
+
+.select-all-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background-color: var(--bg-secondary);
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.select-all-row:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.content-area {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.content-area h1 {
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.audio-controls-wrapper {
+  margin-bottom: 24px;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .action-btn span:not(.material-symbols-outlined) {
+    display: none;
+  }
+}
+
+/* Audio waveform section styles */
+.audio-waveform-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.no-audio-selected {
+  background-color: var(--bg-panel);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: var(--accent-primary);
+}
+
+.empty-state p {
+  max-width: 400px;
+  line-height: 1.5;
+}
+</style>

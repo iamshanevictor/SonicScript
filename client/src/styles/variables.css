@@ -1,44 +1,26 @@
 :root {
-  /* Theme Colors - Modern Professional Palette */
-  --bg-dark: #0f172a;
-  --bg-darker: #1e293b;
-  --bg-panel: #1e293b;
-  --bg-card: #1e293b;
-  --bg-highlight: #334155;
+  /* Colors */
+  --bg-dark: #121212;
+  --bg-header: #1a1a1a;
+  --bg-panel: #1a1a1a;
+  --bg-content: #1a1a1a;
+  --bg-card: #1a1a1a;
+  --bg-secondary: #242424;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-selected: rgba(51, 118, 246, 0.15);
+  
+  --text-primary: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-tertiary: rgba(255, 255, 255, 0.4);
+  
   --border-color: rgba(255, 255, 255, 0.1);
-  --divider-color: rgba(255, 255, 255, 0.06);
   
-  /* Accent Colors - More Vibrant and Professional */
-  --accent-blue: #3b82f6;
-  --accent-blue-lighter: #60a5fa;
-  --accent-blue-dark: #2563eb;
-  --accent-green: #10b981;
-  --accent-red: #ef4444;
-  --accent-purple: #8b5cf6;
-  --accent-orange: #f97316;
-  
-  /* Status Colors */
-  --success: #10b981;
-  --success-light: #34d399;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --info: #60a5fa;
-  
-  /* Text Colors */
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --text-disabled: #64748b;
-  
-  /* Hover States */
-  --hover-overlay: rgba(255, 255, 255, 0.05);
-  --active-overlay: rgba(255, 255, 255, 0.1);
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --accent-primary: #3376f6;
+  --accent-primary-hover: #4285f4;
+  --accent-green: #34a853;
+  --accent-yellow: #fbbc05;
+  --accent-red: #ea4335;
+  --accent-blue-lighter: #8ab4f8;
   
   /* Spacing */
   --spacing-xs: 4px;
@@ -48,19 +30,40 @@
   --spacing-xl: 24px;
   --spacing-xxl: 32px;
   
-  /* Border Radius */
+  /* Border radius */
+  --radius-xs: 2px;
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-
-  /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.25s ease;
   
-  /* Button Styles */
-  --button-padding: 0.6rem 1.2rem;
-  --button-radius: 6px;
+  /* Font sizes */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-xxl: 24px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.2);
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  
+  /* Z-index layers */
+  --z-dropdown: 1000;
+  --z-sticky: 1010;
+  --z-fixed: 1020;
+  --z-modal-backdrop: 1030;
+  --z-modal: 1040;
+  --z-popover: 1050;
+  --z-tooltip: 1060;
 }
 
 /* Common utility classes */
