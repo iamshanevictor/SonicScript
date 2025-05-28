@@ -1,29 +1,34 @@
 <template>
   <div class="waveform-player">
     <div class="waveform-controls">
-      <button class="control-btn" @click="togglePlay">
-        <span class="material-symbols-outlined">{{ isPlaying ? 'pause' : 'play_arrow' }}</span>
-      </button>
-      <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
-      <div class="zoom-controls">
-        <button class="zoom-btn" @click="zoomOut" title="Zoom Out">
-          <span class="material-symbols-outlined">zoom_out</span>
+      <div class="playback-controls">
+        <button class="control-btn" @click="togglePlay">
+          <span class="material-symbols-outlined">{{ isPlaying ? 'pause' : 'play_arrow' }}</span>
         </button>
-        <button class="zoom-btn" @click="zoomIn" title="Zoom In">
-          <span class="material-symbols-outlined">zoom_in</span>
-        </button>
+        <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
       </div>
-      <div class="volume-control">
-        <span class="material-symbols-outlined">volume_up</span>
-        <input 
-          type="range" 
-          min="0" 
-          max="1" 
-          step="0.01" 
-          v-model="volume" 
-          class="volume-slider" 
-          @input="updateVolume"
-        />
+      
+      <div class="secondary-controls">
+        <div class="zoom-controls">
+          <button class="zoom-btn" @click="zoomOut" title="Zoom Out">
+            <span class="material-symbols-outlined">zoom_out</span>
+          </button>
+          <button class="zoom-btn" @click="zoomIn" title="Zoom In">
+            <span class="material-symbols-outlined">zoom_in</span>
+          </button>
+        </div>
+        <div class="volume-control">
+          <span class="material-symbols-outlined">volume_up</span>
+          <input 
+            type="range" 
+            min="0" 
+            max="1" 
+            step="0.01" 
+            v-model="volume" 
+            class="volume-slider" 
+            @input="updateVolume"
+          />
+        </div>
       </div>
     </div>
     
@@ -32,22 +37,26 @@
     </div>
     
     <div class="segment-controls">
-      <button class="segment-btn" @click="startSegment" :disabled="isSegmenting">
-        <span class="material-symbols-outlined">content_cut</span>
-        <span>Start Cut</span>
-      </button>
-      <button class="segment-btn" @click="endSegment" :disabled="!isSegmenting">
-        <span class="material-symbols-outlined">check</span>
-        <span>End Cut</span>
-      </button>
-      <button class="segment-btn" @click="cancelSegment" :disabled="!isSegmenting">
-        <span class="material-symbols-outlined">close</span>
-        <span>Cancel</span>
-      </button>
-      <button class="segment-btn" @click="saveSegment" :disabled="!segmentReady">
-        <span class="material-symbols-outlined">save</span>
-        <span>Save Segment</span>
-      </button>
+      <div class="segment-controls-group">
+        <button class="segment-btn" @click="startSegment" :disabled="isSegmenting" title="Start Cut">
+          <span class="material-symbols-outlined">content_cut</span>
+          <span class="btn-text">Start</span>
+        </button>
+        <button class="segment-btn" @click="endSegment" :disabled="!isSegmenting" title="End Cut">
+          <span class="material-symbols-outlined">check</span>
+          <span class="btn-text">End</span>
+        </button>
+      </div>
+      <div class="segment-controls-group">
+        <button class="segment-btn" @click="cancelSegment" :disabled="!isSegmenting" title="Cancel Cut">
+          <span class="material-symbols-outlined">close</span>
+          <span class="btn-text">Cancel</span>
+        </button>
+        <button class="segment-btn save-btn" @click="saveSegment" :disabled="!segmentReady" title="Save Segment">
+          <span class="material-symbols-outlined">save</span>
+          <span class="btn-text">Save</span>
+        </button>
+      </div>
     </div>
     
     <div v-if="segments.length > 0" class="segments-list">
@@ -339,8 +348,10 @@ const deleteSegment = (index) => {
 .waveform-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 16px;
   flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
 .control-btn {
@@ -390,11 +401,22 @@ const deleteSegment = (index) => {
   background: var(--bg-hover);
 }
 
+.playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.secondary-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .volume-control {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
 }
 
 .volume-slider {
@@ -425,21 +447,41 @@ const deleteSegment = (index) => {
 
 .segment-controls {
   display: flex;
-  gap: 8px;
+  justify-content: center;
+  gap: 16px;
   flex-wrap: wrap;
+  padding: 8px 0;
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.segment-controls-group {
+  display: flex;
+  gap: 8px;
 }
 
 .segment-btn {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: 4px;
   border: none;
   background-color: var(--bg-secondary);
   color: var(--text-primary);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  min-width: 70px;
+  justify-content: center;
+}
+
+.save-btn {
+  background-color: var(--accent-secondary, #4a6fa5);
+  color: white;
+}
+
+.btn-text {
+  font-size: 0.85rem;
 }
 
 .segment-btn:hover:not(:disabled) {
