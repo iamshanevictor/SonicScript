@@ -1,12 +1,12 @@
 <script setup>
 // Import the Vue Router
-import { onMounted, ref, computed, watch, onBeforeUnmount } from 'vue';
-import '@/styles/variables.css';
-import '@/styles/app-layout.css';
-import '@/styles/app-component.css';
-import SourceItem from './components/SourceItem.vue';
-import AudioPlayer from './components/AudioPlayer.vue';
-import WaveformPlayer from './components/WaveformPlayer.vue';
+import { onMounted, ref, computed, watch, onBeforeUnmount } from "vue";
+import "@/styles/variables.css";
+import "@/styles/app-layout.css";
+import "@/styles/app-component.css";
+import SourceItem from "./components/SourceItem.vue";
+import AudioPlayer from "./components/AudioPlayer.vue";
+import WaveformPlayer from "./components/WaveformPlayer.vue";
 
 // Panel collapse state
 const sourcesPanelCollapsed = ref(false);
@@ -15,12 +15,8 @@ const studioPanelCollapsed = ref(false);
 // Window size tracking
 const windowWidth = ref(window.innerWidth);
 
-// Sample source items
-const sources = ref([
-  { id: 1, name: 'Interview_001.mp3', type: 'audio', selected: false, url: null },
-  { id: 2, name: 'Meeting_Notes.mp3', type: 'document', selected: false, url: null },
-  { id: 3, name: 'Lecture_Series.mp3', type: 'document', selected: false, url: null }
-]);
+// Source items
+const sources = ref([]);
 
 // Selected audio source for waveform display
 const selectedAudioSource = ref(null);
@@ -33,17 +29,18 @@ const handleResize = () => {
 
 // Add event listeners for window resize
 onMounted(() => {
-  window.addEventListener('resize', handleResize);
-  
+  window.addEventListener("resize", handleResize);
+
   // Add Google Material Symbols font
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Inter:wght@300;400;500;600;700&display=swap';
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Inter:wght@300;400;500;600;700&display=swap";
   document.head.appendChild(link);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize);
+  window.removeEventListener("resize", handleResize);
 });
 
 const toggleSourcesPanel = () => {
@@ -56,14 +53,22 @@ const toggleStudioPanel = () => {
 
 // Handle source operations
 const handleSourceSelect = (id, selected) => {
-  const index = sources.value.findIndex(source => source.id === id);
+  const index = sources.value.findIndex((source) => source.id === id);
   if (index !== -1) {
     sources.value[index].selected = selected;
-    
+
     // If selected and it's an audio file, set it as the current audio source
-    if (selected && sources.value[index].type === 'audio' && sources.value[index].url) {
+    if (
+      selected &&
+      sources.value[index].type === "audio" &&
+      sources.value[index].url
+    ) {
       selectedAudioSource.value = sources.value[index];
-    } else if (!selected && selectedAudioSource.value && selectedAudioSource.value.id === id) {
+    } else if (
+      !selected &&
+      selectedAudioSource.value &&
+      selectedAudioSource.value.id === id
+    ) {
       // If deselected and it was the current audio source, clear it
       selectedAudioSource.value = null;
     }
@@ -76,8 +81,8 @@ const handleSourceEdit = (id) => {
 
 const handleSourceDelete = (id) => {
   // Find the index of the source to delete
-  const index = sources.value.findIndex(source => source.id === id);
-  
+  const index = sources.value.findIndex((source) => source.id === id);
+
   // If the source exists, remove it from the array
   if (index !== -1) {
     // If it's the selected audio source, clear it
@@ -85,7 +90,7 @@ const handleSourceDelete = (id) => {
       selectedAudioSource.value = null;
       audioSegments.value = [];
     }
-    
+
     sources.value.splice(index, 1);
     console.log(`Deleted source ${id}`);
   }
@@ -93,24 +98,26 @@ const handleSourceDelete = (id) => {
 
 // Format time in mm:ss format
 const formatTime = (seconds) => {
-  if (isNaN(seconds)) return '00:00';
+  if (isNaN(seconds)) return "00:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  return `${mins.toString().padStart(2, "0")}:${secs
+    .toString()
+    .padStart(2, "0")}`;
 };
 
 // Handle segment creation from WaveformPlayer
 const handleSegmentCreated = (segment) => {
   audioSegments.value.push({
     ...segment,
-    transcription: ''
+    transcription: "",
   });
-  console.log('Segment created:', segment);
+  console.log("Segment created:", segment);
 };
 
 // Handle segment deletion from WaveformPlayer
 const handleSegmentDeleted = (segment) => {
-  console.log('Segment deleted:', segment);
+  console.log("Segment deleted:", segment);
 };
 
 // Remove a segment from the transcription list
@@ -127,27 +134,27 @@ const uploadError = ref(null);
 
 const handleFileUpload = async () => {
   // Create a file input element
-  const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.accept = '.mp3';
-  
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".mp3";
+
   // Handle file selection
   fileInput.onchange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     try {
       isUploading.value = true;
       uploadError.value = null;
       uploadProgress.value = 0;
-      
+
       // Create FormData
       const formData = new FormData();
-      formData.append('file', file);
-      
+      formData.append("file", file);
+
       // Upload the file
-      const response = await fetch('http://localhost:5000/api/upload', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/api/upload", {
+        method: "POST",
         body: formData,
         // Track upload progress
         onUploadProgress: (progressEvent) => {
@@ -156,42 +163,42 @@ const handleFileUpload = async () => {
           );
         },
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+        throw new Error(errorData.error || "Upload failed");
       }
-      
+
       const data = await response.json();
-      
+
       // Add the new source to the list
       const newSource = {
         id: sources.value.length + 1,
         name: data.originalName,
-        type: 'audio',
+        type: "audio",
         selected: true,
-        url: `http://localhost:5000${data.url}`
+        url: `http://localhost:5000${data.url}`,
       };
-      
+
       // Deselect any previously selected sources
-      sources.value.forEach(source => {
+      sources.value.forEach((source) => {
         source.selected = false;
       });
-      
+
       sources.value.push(newSource);
-      
+
       // Set as the current audio source
       selectedAudioSource.value = newSource;
-      
-      console.log('File uploaded successfully:', data);
+
+      console.log("File uploaded successfully:", data);
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error("Error uploading file:", error);
       uploadError.value = error.message;
     } finally {
       isUploading.value = false;
     }
   };
-  
+
   // Trigger the file input click
   fileInput.click();
 };
@@ -222,12 +229,17 @@ const handleFileUpload = async () => {
 
     <main class="main-content">
       <!-- Left Panel - Sources -->
-      <section class="panel sources-panel" :class="{ 'collapsed': sourcesPanelCollapsed }">
+      <section
+        class="panel sources-panel"
+        :class="{ collapsed: sourcesPanelCollapsed }"
+      >
         <div class="panel-inner">
           <div class="panel-header">
             <h2 v-if="!sourcesPanelCollapsed">Sources</h2>
             <div class="panel-collapse-btn" @click="toggleSourcesPanel">
-              <span class="material-symbols-outlined">{{ sourcesPanelCollapsed ? 'chevron_right' : 'chevron_left' }}</span>
+              <span class="material-symbols-outlined">{{
+                sourcesPanelCollapsed ? "chevron_right" : "chevron_left"
+              }}</span>
             </div>
           </div>
 
@@ -259,8 +271,8 @@ const handleFileUpload = async () => {
 
             <div class="source-list">
               <!-- Using our new SourceItem component -->
-              <SourceItem 
-                v-for="source in sources" 
+              <SourceItem
+                v-for="source in sources"
                 :key="source.id"
                 :name="source.name"
                 :type="source.type"
@@ -280,7 +292,7 @@ const handleFileUpload = async () => {
           <div class="panel-header">
             <h2>Chat</h2>
           </div>
-          
+
           <div class="panel-content">
             <div class="content-title">
               <div class="app-icon">
@@ -302,9 +314,13 @@ const handleFileUpload = async () => {
             </div>
 
             <div class="action-buttons">
-              <button class="primary-action-btn" @click="handleFileUpload" :disabled="isUploading">
+              <button
+                class="primary-action-btn"
+                @click="handleFileUpload"
+                :disabled="isUploading"
+              >
                 <span class="material-symbols-outlined">upload_file</span>
-                <span>{{ isUploading ? 'Uploading...' : 'Upload Audio' }}</span>
+                <span>{{ isUploading ? "Uploading..." : "Upload Audio" }}</span>
               </button>
               <button class="primary-action-btn">
                 <span class="material-symbols-outlined">download</span>
@@ -330,26 +346,38 @@ const handleFileUpload = async () => {
             <!-- Audio Waveform Player -->
             <div v-if="selectedAudioSource" class="audio-waveform-section">
               <h3 class="section-title">Audio Waveform</h3>
-              <WaveformPlayer 
-                :audioUrl="selectedAudioSource.url" 
+              <WaveformPlayer
+                :audioUrl="selectedAudioSource.url"
                 @segmentCreated="handleSegmentCreated"
                 @segmentDeleted="handleSegmentDeleted"
               />
             </div>
-            
+
             <div v-else class="no-audio-selected">
               <div class="empty-state">
-                <span class="material-symbols-outlined empty-icon">graphic_eq</span>
-                <p>Select an audio source from the Sources panel or upload a new audio file to visualize its waveform.</p>
+                <span class="material-symbols-outlined empty-icon"
+                  >graphic_eq</span
+                >
+                <p>
+                  Select an audio source from the Sources panel or upload a new
+                  audio file to visualize its waveform.
+                </p>
               </div>
             </div>
-            
+
             <!-- Transcription Segments -->
             <div v-if="audioSegments.length > 0" class="transcription-segments">
               <h3 class="section-title">Transcription Segments</h3>
-              <div v-for="(segment, index) in audioSegments" :key="index" class="segment completed">
+              <div
+                v-for="(segment, index) in audioSegments"
+                :key="index"
+                class="segment completed"
+              >
                 <div class="segment-header">
-                  <div class="segment-time">{{ formatTime(segment.start) }} - {{ formatTime(segment.end) }}</div>
+                  <div class="segment-time">
+                    {{ formatTime(segment.start) }} -
+                    {{ formatTime(segment.end) }}
+                  </div>
                   <div class="segment-actions">
                     <button class="segment-btn">
                       <span class="material-symbols-outlined">edit_note</span>
@@ -374,12 +402,17 @@ const handleFileUpload = async () => {
       </section>
 
       <!-- Right Panel - Studio -->
-      <section class="panel studio-panel" :class="{ 'collapsed': studioPanelCollapsed }">
+      <section
+        class="panel studio-panel"
+        :class="{ collapsed: studioPanelCollapsed }"
+      >
         <div class="panel-inner">
           <div class="panel-header">
             <h2 v-if="!studioPanelCollapsed">Studio</h2>
             <div class="panel-collapse-btn" @click="toggleStudioPanel">
-              <span class="material-symbols-outlined">{{ studioPanelCollapsed ? 'chevron_left' : 'chevron_right' }}</span>
+              <span class="material-symbols-outlined">{{
+                studioPanelCollapsed ? "chevron_left" : "chevron_right"
+              }}</span>
             </div>
           </div>
 
@@ -465,13 +498,7 @@ const handleFileUpload = async () => {
                       <div class="preview-cell">Transcript</div>
                       <div class="preview-cell">Keywords</div>
                     </div>
-                    <div class="preview-row">
-                      <div class="preview-cell">Interview_001.mp3</div>
-                      <div class="preview-cell">00:00:15</div>
-                      <div class="preview-cell">00:00:22</div>
-                      <div class="preview-cell">Welcome to our...</div>
-                      <div class="preview-cell">meeting, intro</div>
-                    </div>
+                    <!-- CSV preview rows will be dynamically generated based on actual content -->
                   </div>
                 </div>
 
@@ -654,7 +681,8 @@ const handleFileUpload = async () => {
   color: var(--text-secondary);
 }
 
-.panel-icon-item:hover, .panel-icon-item.active {
+.panel-icon-item:hover,
+.panel-icon-item.active {
   background-color: var(--bg-selected);
   color: var(--accent-primary);
 }

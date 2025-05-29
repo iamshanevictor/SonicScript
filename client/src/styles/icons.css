@@ -6,6 +6,7 @@
   line-height: 1;
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' -25, 'opsz' 24;
   background-color: transparent !important;
+  font-feature-settings: 'liga';
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
