@@ -37,42 +37,52 @@
     </div>
     
     <div class="segment-controls">
-      <div class="segment-controls-group">
-        <button class="segment-btn" @click="startSegment" :disabled="isSegmenting" title="Start Cut">
-          <span class="material-symbols-outlined">content_cut</span>
-          <span class="btn-text">Start</span>
-        </button>
-        <button class="segment-btn" @click="endSegment" :disabled="!isSegmenting" title="End Cut">
-          <span class="material-symbols-outlined">check</span>
-          <span class="btn-text">End</span>
-        </button>
-      </div>
-      <div class="segment-controls-group">
-        <button class="segment-btn" @click="cancelSegment" :disabled="!isSegmenting" title="Cancel Cut">
-          <span class="material-symbols-outlined">close</span>
-          <span class="btn-text">Cancel</span>
-        </button>
-        <button class="segment-btn save-btn" @click="saveSegment" :disabled="!segmentReady" title="Save Segment">
-          <span class="material-symbols-outlined">save</span>
-          <span class="btn-text">Save</span>
-        </button>
-      </div>
+      <button class="control-icon-btn" @click="startSegment" :disabled="isSegmenting" title="Start Cut">
+        <span class="material-symbols-outlined">content_cut</span>
+      </button>
+      <button class="control-icon-btn" @click="endSegment" :disabled="!isSegmenting" title="End Cut">
+        <span class="material-symbols-outlined">check</span>
+      </button>
+      <button class="control-icon-btn" @click="cancelSegment" :disabled="!isSegmenting" title="Cancel Cut">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <button class="control-icon-btn save-btn" @click="saveSegment" :disabled="!segmentReady" title="Save Segment">
+        <span class="material-symbols-outlined">save</span>
+      </button>
     </div>
     
     <div v-if="segments.length > 0" class="segments-list">
       <h3>Segments</h3>
       <div v-for="(segment, index) in segments" :key="index" class="segment-item">
-        <div class="segment-info">
-          <span class="segment-time">{{ formatTime(segment.start) }} - {{ formatTime(segment.end) }}</span>
-          <span class="segment-duration">({{ formatTime(segment.end - segment.start) }})</span>
+        <div class="segment-header">
+          <div class="segment-info">
+            <span class="segment-time">{{ formatTime(segment.start) }} - {{ formatTime(segment.end) }}</span>
+            <span class="segment-duration">({{ formatTime(segment.end - segment.start) }})</span>
+          </div>
+          <div class="segment-actions">
+            <button class="action-btn" @click="playSegment(segment)" title="Play this segment">
+              <span class="material-symbols-outlined">play_arrow</span>
+            </button>
+            <button class="action-btn" @click="transcribeSegment(index)" title="Auto-transcribe this segment">
+              <span class="material-symbols-outlined">mic</span>
+            </button>
+            <button class="action-btn" @click="deleteSegment(index)" title="Delete this segment">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
         </div>
-        <div class="segment-actions">
-          <button class="action-btn" @click="playSegment(segment)">
-            <span class="material-symbols-outlined">play_arrow</span>
-          </button>
-          <button class="action-btn" @click="deleteSegment(index)">
-            <span class="material-symbols-outlined">delete</span>
-          </button>
+        
+        <!-- Transcription input directly in the segment -->
+        <div v-if="segment.isTranscribing" class="segment-loading">
+          <div class="loading-spinner"></div>
+          <span>Transcribing...</span>
+        </div>
+        <div v-else class="segment-transcription">
+          <textarea
+            class="segment-input"
+            placeholder="Type what you hear in this segment or click the microphone to auto-transcribe"
+            v-model="segment.transcription"
+          ></textarea>
         </div>
       </div>
     </div>
@@ -90,7 +100,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['segmentCreated', 'segmentDeleted']);
+const emit = defineEmits(['segmentCreated', 'segmentDeleted', 'transcribeSegment']);
 
 // Refs
 const waveformRef = ref(null);
@@ -272,6 +282,8 @@ const saveSegment = () => {
     start: segmentStart.value,
     end: segmentEnd.value,
     duration: segmentEnd.value - segmentStart.value,
+    transcription: '',
+    isTranscribing: false
   };
   
   segments.value.push(newSegment);
@@ -302,33 +314,60 @@ const playSegment = (segment) => {
   wavesurfer.value.play(segment.start, segment.end);
 };
 
-const deleteSegment = (index) => {
-  if (!wavesurfer.value) return;
+const transcribeSegment = (index) => {
+  if (index < 0 || index >= segments.value.length) return;
   
-  // Remove the region
+  const segment = segments.value[index];
+  
+  // Set transcribing state
+  segment.isTranscribing = true;
+  
+  // Simulate transcription (in a real app, this would call an API)
+  setTimeout(() => {
+    // Update with simulated transcription
+    segment.transcription = `Transcription for segment from ${formatTime(segment.start)} to ${formatTime(segment.end)}`;
+    segment.isTranscribing = false;
+  }, 1500);
+};
+
+const deleteSegment = (index) => {
+  if (index < 0 || index >= segments.value.length) return;
+  
+  const segmentToDelete = segments.value[index];
+  
+  // Remove the region from the waveform
   const regionId = `segment-${index}`;
   if (wavesurfer.value.regions.list[regionId]) {
     wavesurfer.value.regions.list[regionId].remove();
   }
   
   // Remove the segment from the array
-  const removedSegment = segments.value.splice(index, 1)[0];
-  emit('segmentDeleted', removedSegment);
+  segments.value.splice(index, 1);
   
-  // Rename the remaining regions to match their new indices
-  segments.value.forEach((segment, i) => {
-    const oldId = `segment-${i + (i >= index ? 1 : 0)}`;
-    if (wavesurfer.value.regions.list[oldId]) {
-      const region = wavesurfer.value.regions.list[oldId];
-      const newRegion = wavesurfer.value.addRegion({
-        id: `segment-${i}`,
-        start: region.start,
-        end: region.end,
-        color: 'rgba(0, 128, 0, 0.2)',
-        drag: false,
-        resize: false,
-      });
-      region.remove();
+  // Emit the delete event
+  emit('segmentDeleted', segmentToDelete);
+  
+  // Renumber the remaining regions
+  Object.keys(wavesurfer.value.regions.list).forEach(id => {
+    if (id.startsWith('segment-')) {
+      const oldIndex = parseInt(id.split('-')[1]);
+      if (oldIndex > index) {
+        const region = wavesurfer.value.regions.list[id];
+        const newId = `segment-${oldIndex - 1}`;
+        
+        // Create a new region with the updated ID
+        wavesurfer.value.addRegion({
+          id: newId,
+          start: region.start,
+          end: region.end,
+          color: 'rgba(0, 128, 0, 0.2)',
+          drag: false,
+          resize: false,
+        });
+        
+        // Remove the old region
+        region.remove();
+      }
     }
   });
 };
@@ -373,161 +412,150 @@ const deleteSegment = (index) => {
 }
 
 .time-display {
-  font-size: 0.85rem;
+  font-family: monospace;
   color: var(--text-secondary);
-  min-width: 110px;
-}
-
-.zoom-controls {
-  display: flex;
-  gap: 4px;
-}
-
-.zoom-btn {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: none;
-  border-radius: 4px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.zoom-btn:hover {
-  background: var(--bg-hover);
-}
-
-.playback-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .secondary-controls {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 15px;
+}
+
+.zoom-controls {
+  display: flex;
+  gap: 5px;
+}
+
+.zoom-btn {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .volume-control {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--text-secondary);
 }
 
 .volume-slider {
-  -webkit-appearance: none;
-  width: 100px;
-  height: 4px;
-  background: var(--bg-secondary);
-  border-radius: 2px;
-  outline: none;
-}
-
-.volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--accent-primary);
-  cursor: pointer;
+  width: 80px;
 }
 
 .waveform-container {
-  width: 100%;
+  position: relative;
   height: 100px;
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-element);
   border-radius: 4px;
   overflow: hidden;
+}
+
+.waveform {
+  width: 100%;
+  height: 100%;
 }
 
 .segment-controls {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 8px 0;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
   border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
   border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
-.segment-controls-group {
-  display: flex;
-  gap: 8px;
-}
-
-.segment-btn {
+.control-icon-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border-radius: 4px;
-  border: none;
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 70px;
   justify-content: center;
+  background-color: transparent;
+  border: none;
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.save-btn {
-  background-color: var(--accent-secondary, #4a6fa5);
-  color: white;
+.control-icon-btn .material-symbols-outlined {
+  font-size: 20px;
 }
 
-.btn-text {
-  font-size: 0.85rem;
+.control-icon-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-.segment-btn:hover:not(:disabled) {
-  background-color: var(--bg-hover);
-}
-
-.segment-btn:disabled {
+.control-icon-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
+.save-btn {
+  background-color: var(--accent-primary, #4a6fa5);
+  color: white;
+}
+
+/* Segments list styles */
 .segments-list {
-  margin-top: 16px;
+  margin-top: 20px;
+}
+
+.segments-list h3 {
+  margin-bottom: 10px;
+  color: var(--text-primary);
 }
 
 .segment-item {
   display: flex;
+  flex-direction: column;
+  background-color: var(--bg-element);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.segment-header {
+  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background-color: var(--bg-secondary);
-  border-radius: 4px;
-  margin-bottom: 8px;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .segment-info {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .segment-time {
   font-weight: 500;
+  color: var(--text-primary);
 }
 
 .segment-duration {
-  font-size: 0.8rem;
+  font-size: 0.8em;
   color: var(--text-secondary);
 }
 
 .segment-actions {
   display: flex;
-  gap: 4px;
+  gap: 5px;
 }
 
 .action-btn {
-  background: transparent;
+  background-color: transparent;
   border: none;
   color: var(--text-secondary);
   width: 28px;
@@ -540,7 +568,51 @@ const deleteSegment = (index) => {
 }
 
 .action-btn:hover {
-  background-color: var(--bg-hover);
+  background-color: rgba(0, 0, 0, 0.1);
   color: var(--text-primary);
+}
+
+/* Transcription styles */
+.segment-loading {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(100, 149, 237, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  margin-right: 10px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.segment-transcription {
+  padding: 10px;
+}
+
+.segment-input {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-input, #1e1e1e);
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.segment-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
 }
 </style>

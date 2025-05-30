@@ -111,6 +111,8 @@ const handleSegmentCreated = (segment) => {
   audioSegments.value.push({
     ...segment,
     transcription: "",
+    isTranscribing: false,
+    isEditing: true // Start in editing mode
   });
   console.log("Segment created:", segment);
 };
@@ -118,12 +120,68 @@ const handleSegmentCreated = (segment) => {
 // Handle segment deletion from WaveformPlayer
 const handleSegmentDeleted = (segment) => {
   console.log("Segment deleted:", segment);
+  // Find the corresponding segment in the waveform player
+  // This ensures the visual representation is also removed
+  if (selectedAudioSource.value) {
+    // The WaveformPlayer component will handle the actual removal
+  }
+};
+
+// Handle transcription request for a segment
+const handleTranscribeSegment = (index, segment) => {
+  // Find the segment in our audioSegments array
+  const segmentIndex = audioSegments.value.findIndex(s => 
+    s.start === segment.start && s.end === segment.end);
+  
+  if (segmentIndex !== -1) {
+    // Set a loading state for the segment
+    audioSegments.value[segmentIndex].isTranscribing = true;
+    
+    // Simulate a transcription process (in a real app, this would call an API)
+    setTimeout(() => {
+      // Update the segment with a simulated transcription
+      audioSegments.value[segmentIndex].transcription = 
+        `Transcription for segment from ${formatTime(segment.start)} to ${formatTime(segment.end)}`;
+      audioSegments.value[segmentIndex].isTranscribing = false;
+      
+      console.log("Segment transcribed:", audioSegments.value[segmentIndex]);
+    }, 1500); // Simulate a delay for the transcription process
+  }
+};
+
+// Play a specific segment
+const playSegment = (segment) => {
+  // Create an audio element to play just this segment
+  if (selectedAudioSource.value && segment) {
+    const audio = new Audio(selectedAudioSource.value.url);
+    audio.currentTime = segment.start;
+    
+    // Play the segment
+    audio.play();
+    
+    // Stop when the segment ends
+    const duration = segment.end - segment.start;
+    setTimeout(() => {
+      audio.pause();
+    }, duration * 1000);
+    
+    console.log('Playing segment:', segment);
+  }
 };
 
 // Remove a segment from the transcription list
 const removeSegment = (index) => {
   if (index >= 0 && index < audioSegments.value.length) {
+    // Get the segment to be deleted for the emit event
+    const segmentToDelete = audioSegments.value[index];
+    
+    // Remove from our local array
     audioSegments.value.splice(index, 1);
+    
+    // Emit event to notify WaveformPlayer to remove the segment
+    if (segmentToDelete) {
+      handleSegmentDeleted(segmentToDelete);
+    }
   }
 };
 
@@ -259,14 +317,10 @@ const handleFileUpload = async () => {
           <!-- Expanded View -->
           <div v-else class="panel-content">
             <div class="panel-actions">
-              <button class="panel-action-btn">
+              <button class="panel-action-btn" @click="handleFileUpload">
                 <span class="material-symbols-outlined">add</span>
                 <span>Add</span>
               </button>
-            </div>
-
-            <div class="select-all-row">
-              <span>Select all sources</span>
             </div>
 
             <div class="source-list">
@@ -350,6 +404,7 @@ const handleFileUpload = async () => {
                 :audioUrl="selectedAudioSource.url"
                 @segmentCreated="handleSegmentCreated"
                 @segmentDeleted="handleSegmentDeleted"
+                @transcribeSegment="handleTranscribeSegment"
               />
             </div>
 
@@ -365,38 +420,7 @@ const handleFileUpload = async () => {
               </div>
             </div>
 
-            <!-- Transcription Segments -->
-            <div v-if="audioSegments.length > 0" class="transcription-segments">
-              <h3 class="section-title">Transcription Segments</h3>
-              <div
-                v-for="(segment, index) in audioSegments"
-                :key="index"
-                class="segment completed"
-              >
-                <div class="segment-header">
-                  <div class="segment-time">
-                    {{ formatTime(segment.start) }} -
-                    {{ formatTime(segment.end) }}
-                  </div>
-                  <div class="segment-actions">
-                    <button class="segment-btn">
-                      <span class="material-symbols-outlined">edit_note</span>
-                    </button>
-                    <button class="segment-btn" @click="removeSegment(index)">
-                      <span class="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
-                </div>
-                <div class="segment-content" v-if="segment.transcription">
-                  {{ segment.transcription }}
-                </div>
-                <textarea
-                  v-else
-                  class="segment-input"
-                  placeholder="Type what you hear in this segment..."
-                ></textarea>
-              </div>
-            </div>
+            <!-- Audio segments are now handled directly in the WaveformPlayer component -->
           </div>
         </div>
       </section>
@@ -517,6 +541,143 @@ const handleFileUpload = async () => {
 
 <style scoped>
 /* App-specific scoped styles */
+
+/* Loading spinner for transcription */
+.segment-loading {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(100, 149, 237, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  margin-right: 10px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Edit button for transcription text */
+.segment-content {
+  position: relative;
+  padding-right: 30px; /* Make room for the edit button */
+}
+
+.edit-text-btn {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.edit-text-btn:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Segments section */
+.segments-section {
+  margin-bottom: 20px;
+  background-color: var(--bg-panel);
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.segments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.segment-item {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-element);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.segment-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.segment-time {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.segment-duration {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+}
+
+.segment-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+}
+
+/* Segment transcription */
+.segment-transcription {
+  padding: 10px;
+}
+
+.segment-input {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.segment-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
 .app-container {
   display: flex;
   flex-direction: column;
