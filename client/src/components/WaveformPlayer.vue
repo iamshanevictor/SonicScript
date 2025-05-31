@@ -53,20 +53,17 @@
     
     <div v-if="segments.length > 0" class="segments-list">
       <h3>Segments</h3>
-      <div v-for="(segment, index) in segments" :key="index" class="segment-item">
+      <div class="segment-item" v-for="(segment, index) in segments" :key="index">
         <div class="segment-header">
-          <div class="segment-info">
-            <span class="segment-time">{{ formatTime(segment.start) }} - {{ formatTime(segment.end) }}</span>
-            <span class="segment-duration">({{ formatTime(segment.end - segment.start) }})</span>
-          </div>
+          <div class="segment-time">{{ formatTime(segment.start) }} - {{ formatTime(segment.end) }} ({{ formatDuration(segment.end - segment.start) }})</div>
           <div class="segment-actions">
-            <button class="action-btn" @click="playSegment(segment)" title="Play this segment">
+            <button class="segment-action-btn" @click="playSegment(index)" title="Play segment">
               <span class="material-symbols-outlined">play_arrow</span>
             </button>
-            <button class="action-btn" @click="transcribeSegment(index)" title="Auto-transcribe this segment">
-              <span class="material-symbols-outlined">mic</span>
+            <button class="segment-action-btn" @click="downloadSegment(index)" title="Download segment">
+              <span class="material-symbols-outlined">download</span>
             </button>
-            <button class="action-btn" @click="deleteSegment(index)" title="Delete this segment">
+            <button class="segment-action-btn" @click="deleteSegment(index)" title="Delete segment">
               <span class="material-symbols-outlined">delete</span>
             </button>
           </div>
@@ -198,6 +195,13 @@ const formatTime = (seconds) => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
+const formatDuration = (seconds) => {
+  if (isNaN(seconds)) return '00:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 // Playback controls
 const togglePlay = () => {
   if (wavesurfer.value) {
@@ -258,9 +262,21 @@ const endSegment = () => {
   segmentReady.value = true;
   
   // Update the region to show the full segment
-  wavesurfer.value.regions.list['segment-start'].update({
-    end: segmentEnd.value,
-  });
+  if (wavesurfer.value.regions.list['segment-start']) {
+    wavesurfer.value.regions.list['segment-start'].update({
+      end: segmentEnd.value,
+    });
+  } else {
+    // If region doesn't exist for some reason, create it
+    wavesurfer.value.addRegion({
+      id: 'segment-start',
+      start: segmentStart.value,
+      end: segmentEnd.value,
+      color: 'rgba(255, 0, 0, 0.3)',
+    });
+  }
+  
+  console.log('Segment ready:', { start: segmentStart.value, end: segmentEnd.value, ready: segmentReady.value });
 };
 
 const cancelSegment = () => {
@@ -276,42 +292,84 @@ const cancelSegment = () => {
 };
 
 const saveSegment = () => {
-  if (!segmentReady.value || !segmentStart.value || !segmentEnd.value) return;
+  // Double-check all required values are present
+  if (!segmentReady.value) {
+    console.log('Segment not ready to save');
+    return;
+  }
+  
+  // Check if start and end times are valid numbers
+  // Note: We use typeof check to allow 0 as a valid start time
+  if (typeof segmentStart.value !== 'number' || typeof segmentEnd.value !== 'number') {
+    console.log('Invalid segment start or end time');
+    return;
+  }
+  
+  // Ensure start is before end
+  let start = segmentStart.value;
+  let end = segmentEnd.value;
+  if (start > end) {
+    [start, end] = [end, start];
+  }
   
   const newSegment = {
-    start: segmentStart.value,
-    end: segmentEnd.value,
-    duration: segmentEnd.value - segmentStart.value,
+    start: start,
+    end: end,
+    duration: end - start,
     transcription: '',
     isTranscribing: false
   };
+  
+  console.log('Saving segment:', newSegment);
   
   segments.value.push(newSegment);
   emit('segmentCreated', newSegment);
   
   // Reset segment state
   segmentReady.value = false;
+  segmentStart.value = null;
+  segmentEnd.value = null;
   
   // Remove the temporary region
-  if (wavesurfer.value.regions.list['segment-start']) {
-    wavesurfer.value.regions.list['segment-start'].remove();
+  try {
+    if (wavesurfer.value.regions.list['segment-start']) {
+      wavesurfer.value.regions.list['segment-start'].remove();
+    }
+  } catch (error) {
+    console.error('Error removing temporary region:', error);
   }
   
   // Add a permanent region for this segment
-  wavesurfer.value.addRegion({
-    id: `segment-${segments.value.length - 1}`,
-    start: newSegment.start,
-    end: newSegment.end,
-    color: 'rgba(0, 128, 0, 0.2)',
-    drag: false,
-    resize: false,
-  });
+  try {
+    wavesurfer.value.addRegion({
+      id: `segment-${segments.value.length - 1}`,
+      start: newSegment.start,
+      end: newSegment.end,
+      color: 'rgba(0, 128, 0, 0.2)',
+      drag: false,
+      resize: false,
+    });
+  } catch (error) {
+    console.error('Error adding permanent region:', error);
+  }
 };
 
-const playSegment = (segment) => {
-  if (!wavesurfer.value) return;
+const playSegment = (index) => {
+  if (!wavesurfer.value || index < 0 || index >= segments.value.length) return;
   
+  const segment = segments.value[index];
   wavesurfer.value.play(segment.start, segment.end);
+};
+
+const downloadSegment = (index) => {
+  if (index < 0 || index >= segments.value.length) return;
+  
+  // This is a placeholder - actual implementation would require backend support
+  // to extract and download the audio segment
+  console.log(`Download requested for segment ${index}`);
+  
+  // Display a message to the user
+  alert('Download functionality will be available in a future update.');
 };
 
 const transcribeSegment = (index) => {
@@ -480,20 +538,22 @@ const deleteSegment = (index) => {
   justify-content: center;
   background-color: transparent;
   border: none;
-  color: var(--text-primary);
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
+  color: var(--text-primary, #e0e0e0);
+  width: 36px;
+  height: 36px;
+  border-radius: 3px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .control-icon-btn .material-symbols-outlined {
-  font-size: 20px;
+  font-size: 18px;
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
 }
 
 .control-icon-btn:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--accent-primary, #4a6fa5);
 }
 
 .control-icon-btn:disabled {
@@ -551,7 +611,31 @@ const deleteSegment = (index) => {
 
 .segment-actions {
   display: flex;
-  gap: 5px;
+  gap: 4px;
+}
+
+.segment-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  color: var(--text-primary, #e0e0e0);
+  width: 32px;
+  height: 32px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.segment-action-btn .material-symbols-outlined {
+  font-size: 16px;
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+.segment-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--accent-primary, #4a6fa5);
 }
 
 .action-btn {
