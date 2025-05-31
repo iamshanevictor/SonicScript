@@ -345,6 +345,7 @@ const handleFileUpload = async () => {
         <div class="panel-inner">
           <div class="panel-header">
             <h2>Chat</h2>
+            <div></div> <!-- Empty div to match structure of other panels -->
           </div>
 
           <div class="panel-content">

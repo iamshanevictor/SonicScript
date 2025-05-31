@@ -10,15 +10,14 @@
       
       <div class="secondary-controls">
         <div class="zoom-controls">
-          <button class="zoom-btn" @click="zoomOut" title="Zoom Out">
-            <span class="material-symbols-outlined">zoom_out</span>
+          <button class="control-icon-btn" @click="zoomOut" title="Zoom Out">
+            <span class="material-symbols-outlined">remove</span>
           </button>
-          <button class="zoom-btn" @click="zoomIn" title="Zoom In">
-            <span class="material-symbols-outlined">zoom_in</span>
+          <button class="control-icon-btn" @click="zoomIn" title="Zoom In">
+            <span class="material-symbols-outlined">add</span>
           </button>
         </div>
         <div class="volume-control">
-          <span class="material-symbols-outlined">volume_up</span>
           <input 
             type="range" 
             min="0" 
@@ -37,17 +36,17 @@
     </div>
     
     <div class="segment-controls">
-      <button class="control-icon-btn" @click="startSegment" :disabled="isSegmenting" title="Start Cut">
-        <span class="material-symbols-outlined">content_cut</span>
+      <button class="control-icon-btn" @click="startSegment" :disabled="isSegmenting" title="Mark Start">
+        <span class="material-symbols-outlined">east</span>
       </button>
-      <button class="control-icon-btn" @click="endSegment" :disabled="!isSegmenting" title="End Cut">
-        <span class="material-symbols-outlined">check</span>
+      <button class="control-icon-btn" @click="endSegment" :disabled="!isSegmenting" title="Mark End">
+        <span class="material-symbols-outlined">first_page</span>
       </button>
-      <button class="control-icon-btn" @click="cancelSegment" :disabled="!isSegmenting" title="Cancel Cut">
+      <button class="control-icon-btn" @click="cancelSegment" :disabled="!isSegmenting" title="Cancel Selection">
         <span class="material-symbols-outlined">close</span>
       </button>
-      <button class="control-icon-btn save-btn" @click="saveSegment" :disabled="!segmentReady" title="Save Segment">
-        <span class="material-symbols-outlined">save</span>
+      <button class="control-icon-btn" @click="saveSegment" :disabled="!segmentReady" title="Create Segment">
+        <span class="material-symbols-outlined">add</span>
       </button>
     </div>
     
@@ -125,14 +124,20 @@ onMounted(() => {
     waveColor: 'rgba(100, 149, 237, 0.7)',
     progressColor: 'rgb(100, 149, 237)',
     cursorColor: '#fff',
-    barWidth: 2,
-    barRadius: 3,
-    cursorWidth: 1,
     height: 100,
-    barGap: 2,
     responsive: true,
     normalize: true,
     partialRender: true,
+    // Use waveform instead of bars
+    barWidth: 0,  // Setting to 0 removes the bars
+    barGap: 0,    // No gap between bars
+    barRadius: 0, // No radius on bars
+    // Use a line waveform
+    waveform: {
+      type: 'line',
+      lineWidth: 2,
+      fillParent: true
+    }
   });
   
   // Load audio file
@@ -238,11 +243,13 @@ const startSegment = () => {
   isSegmenting.value = true;
   segmentReady.value = false;
   
-  // Add a marker at the start position
+  // Add a marker at the start position with a distinct color
   wavesurfer.value.addRegion({
     id: 'segment-start',
     start: segmentStart.value,
-    color: 'rgba(255, 0, 0, 0.3)',
+    color: 'rgba(74, 111, 165, 0.4)',
+    drag: false,
+    resize: false,
   });
 };
 
@@ -261,10 +268,13 @@ const endSegment = () => {
   isSegmenting.value = false;
   segmentReady.value = true;
   
-  // Update the region to show the full segment
+  // Update the region to show the full segment with clear highlighting
   if (wavesurfer.value.regions.list['segment-start']) {
     wavesurfer.value.regions.list['segment-start'].update({
       end: segmentEnd.value,
+      color: 'rgba(74, 111, 165, 0.5)',  // More visible highlight
+      drag: false,
+      resize: false,
     });
   } else {
     // If region doesn't exist for some reason, create it
@@ -272,7 +282,9 @@ const endSegment = () => {
       id: 'segment-start',
       start: segmentStart.value,
       end: segmentEnd.value,
-      color: 'rgba(255, 0, 0, 0.3)',
+      color: 'rgba(74, 111, 165, 0.5)',  // More visible highlight
+      drag: false,
+      resize: false,
     });
   }
   
@@ -285,7 +297,7 @@ const cancelSegment = () => {
   isSegmenting.value = false;
   segmentReady.value = false;
   
-  // Remove the marker
+  // Remove the region highlight
   if (wavesurfer.value.regions.list['segment-start']) {
     wavesurfer.value.regions.list['segment-start'].remove();
   }
@@ -339,13 +351,15 @@ const saveSegment = () => {
     console.error('Error removing temporary region:', error);
   }
   
+  // No additional cleanup needed since we're only using region highlighting
+  
   // Add a permanent region for this segment
   try {
     wavesurfer.value.addRegion({
       id: `segment-${segments.value.length - 1}`,
       start: newSegment.start,
       end: newSegment.end,
-      color: 'rgba(0, 128, 0, 0.2)',
+      color: 'rgba(74, 111, 165, 0.4)',
       drag: false,
       resize: false,
     });
@@ -507,6 +521,46 @@ const deleteSegment = (index) => {
 
 .volume-slider {
   width: 80px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  background: var(--text-secondary, #a0a0a0);
+  border-radius: 1px;
+  outline: none;
+  overflow: hidden;
+}
+
+/* Create a subtle volume level indicator */
+.volume-slider::-webkit-slider-runnable-track {
+  height: 3px;
+  background: var(--text-secondary, #a0a0a0);
+}
+
+.volume-slider::-moz-range-track {
+  height: 3px;
+  background: var(--text-secondary, #a0a0a0);
+}
+
+/* Small minimal thumb that's visible but not obtrusive */
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 2px;
+  height: 10px;
+  background: white;
+  cursor: pointer;
+  border-radius: 0;
+  box-shadow: -80px 0 0 80px var(--accent-primary, #4a6fa5);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 2px;
+  height: 10px;
+  background: white;
+  cursor: pointer;
+  border: none;
+  border-radius: 0;
+  box-shadow: -80px 0 0 80px var(--accent-primary, #4a6fa5);
 }
 
 .waveform-container {
@@ -561,9 +615,37 @@ const deleteSegment = (index) => {
   cursor: not-allowed;
 }
 
-.save-btn {
-  background-color: var(--accent-primary, #4a6fa5);
+/* Save button styling removed to match theme */
+
+/* Segment visualization styles */
+.segment-marker-label {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.7);
   color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.segment-info-display {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  bottom: 10px;
+  right: 10px;
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 3px solid var(--accent-primary, #4a6fa5);
 }
 
 /* Segments list styles */
