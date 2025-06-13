@@ -1,17 +1,17 @@
 # SonicScript
 
-A web application for audio manipulation with waveform visualization.
+SonicScript is a powerful data preparation tool designed for machine learning, with a special focus on Natural Language Processing (NLP). It provides a user-friendly web interface for preprocessing audio data, enabling tasks like segmenting, cutting, and managing audio files for ML model training.
 
 ## Features
 
-- **Audio Upload & Visualization**
-  - Support for .mp3 uploads
-  - Waveform rendering and zooming with Wavesurfer.js
-  - Zoom, pan, and volume adjustment controls
+- **Efficient Audio Preprocessing for ML**
+  - Upload and visualize audio files (`.mp3` format) for analysis.
+  - Precisely select and cut audio segments to create clean datasets.
+  - Interactive waveform for easy navigation and identification of speech segments.
 
-- **Segment Cutting**
-  - Selection of time ranges using drag handles or marker clicks
-  - Cut functionality to isolate segments
+- **Streamlined for NLP Workflows**
+  - Ideal for preparing audio data for tasks like speech-to-text, speaker diarization, and sentiment analysis.
+  - Simple API for integration into automated data processing pipelines.
 
 ## Project Structure
 
