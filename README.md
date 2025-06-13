@@ -1,6 +1,6 @@
 # SonicScript
 
-SonicScript is a powerful data preparation tool designed for machine learning, with a special focus on Natural Language Processing (NLP). It provides a user-friendly web interface for preprocessing audio data, enabling tasks like segmenting, cutting, and managing audio files for ML model training.
+A data preparation tool designed for machine learning, with a special focus on Natural Language Processing (NLP). It provides a user-friendly web interface for preprocessing audio data, enabling tasks like segmenting, cutting, and managing audio files for ML model training.
 
 ## Features
 
