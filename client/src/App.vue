@@ -52,27 +52,19 @@ const toggleStudioPanel = () => {
 };
 
 // Handle source operations
-const handleSourceSelect = (id, selected) => {
-  const index = sources.value.findIndex((source) => source.id === id);
-  if (index !== -1) {
-    sources.value[index].selected = selected;
-
-    // If selected and it's an audio file, set it as the current audio source
-    if (
-      selected &&
-      sources.value[index].type === "audio" &&
-      sources.value[index].url
-    ) {
-      selectedAudioSource.value = sources.value[index];
-    } else if (
-      !selected &&
-      selectedAudioSource.value &&
-      selectedAudioSource.value.id === id
-    ) {
-      // If deselected and it was the current audio source, clear it
-      selectedAudioSource.value = null;
+const handleSourceSelect = (id, shouldSelect) => {
+  sources.value.forEach((src) => {
+    if (src.id === id) {
+      src.selected = shouldSelect;
+      if (shouldSelect && src.type === 'audio' && src.url) {
+        selectedAudioSource.value = src;
+      } else if (!shouldSelect && selectedAudioSource.value && selectedAudioSource.value.id === id) {
+        selectedAudioSource.value = null;
+      }
+    } else {
+      src.selected = false;
     }
-  }
+  });
 };
 
 const handleSourceEdit = (id) => {

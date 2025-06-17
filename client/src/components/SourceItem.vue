@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, computed } from 'vue';
 
 const props = defineProps({
   name: {
@@ -32,7 +32,8 @@ const props = defineProps({
 
 const emit = defineEmits(['select', 'edit', 'delete']);
 
-const isSelected = ref(props.selected);
+// Reflect prop directly; reactive when parent changes
+const isSelected = computed(() => props.selected);
 
 const getTypeIcon = (type) => {
   switch (type) {
@@ -61,8 +62,8 @@ const getTypeColor = (type) => {
 };
 
 const toggleSelect = () => {
-  isSelected.value = !isSelected.value;
-  emit('select', isSelected.value);
+  // ask parent to flip selection state
+  emit('select', !props.selected);
 };
 </script>
 
