@@ -375,17 +375,20 @@ const saveSegment = () => {
   // No additional cleanup needed since we're only using region highlighting
   
   // Add a permanent region for this segment
-  try {
-    wavesurfer.value.addRegion({
-      id: `segment-${segments.value.length - 1}`,
-      start: newSegment.start,
-      end: newSegment.end,
-      color: 'rgba(74, 111, 165, 0.4)',
-      drag: false,
-      resize: false,
-    });
-  } catch (error) {
-    console.error('Error adding permanent region:', error);
+  if (regionsPlugin.value) {
+    try {
+      const region = regionsPlugin.value.addRegion({
+        id: `segment-${segments.value.length - 1}`,
+        start: newSegment.start,
+        end: newSegment.end,
+        color: 'rgba(74, 111, 165, 0.4)',
+        drag: false,
+        resize: false,
+      });
+      newSegment.region = region; // keep reference for future deletion
+    } catch (error) {
+      console.error('Error adding permanent region:', error);
+    }
   }
 };
 
@@ -427,42 +430,21 @@ const deleteSegment = (index) => {
   if (index < 0 || index >= segments.value.length) return;
   
   const segmentToDelete = segments.value[index];
-  
-  // Remove the region from the waveform
-  const regionId = `segment-${index}`;
-  if (wavesurfer.value.regions.list[regionId]) {
-    wavesurfer.value.regions.list[regionId].remove();
+
+  // Remove corresponding region
+  if (segmentToDelete.region) {
+    segmentToDelete.region.remove();
+  } else if (regionsPlugin.value) {
+    // Fallback: try to find region by id
+    const target = regionsPlugin.value.getRegions().find(r => r.id === `segment-${index}`);
+    if (target) target.remove();
   }
-  
+
   // Remove the segment from the array
   segments.value.splice(index, 1);
-  
+
   // Emit the delete event
   emit('segmentDeleted', segmentToDelete);
-  
-  // Renumber the remaining regions
-  Object.keys(wavesurfer.value.regions.list).forEach(id => {
-    if (id.startsWith('segment-')) {
-      const oldIndex = parseInt(id.split('-')[1]);
-      if (oldIndex > index) {
-        const region = wavesurfer.value.regions.list[id];
-        const newId = `segment-${oldIndex - 1}`;
-        
-        // Create a new region with the updated ID
-        wavesurfer.value.addRegion({
-          id: newId,
-          start: region.start,
-          end: region.end,
-          color: 'rgba(0, 128, 0, 0.2)',
-          drag: false,
-          resize: false,
-        });
-        
-        // Remove the old region
-        region.remove();
-      }
-    }
-  });
 };
 // Clear the current region selection
 const clearSelection = () => {
