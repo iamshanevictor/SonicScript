@@ -36,17 +36,17 @@
     </div>
     
     <div class="segment-controls">
-      <button class="control-icon-btn" @click="startSegment" :disabled="isSegmenting" title="Mark Start">
-        <span class="material-symbols-outlined">east</span>
+      <!-- Cut the highlighted portion -->
+      <button class="control-icon-btn" @click="cutSegment" :disabled="!selectedRegion" title="Cut Highlighted">
+        <span class="material-symbols-outlined">content_cut</span>
       </button>
-      <button class="control-icon-btn" @click="endSegment" :disabled="!isSegmenting" title="Mark End">
-        <span class="material-symbols-outlined">first_page</span>
+      <!-- Delete everything except the highlighted portion -->
+      <button class="control-icon-btn" @click="deleteOutsideSegment" :disabled="!selectedRegion" title="Delete Unhighlighted">
+        <span class="material-symbols-outlined">crop</span>
       </button>
-      <button class="control-icon-btn" @click="cancelSegment" :disabled="!isSegmenting" title="Cancel Selection">
+      <!-- Clear the current selection -->
+      <button class="control-icon-btn" @click="clearSelection" :disabled="!selectedRegion" title="Clear Selection">
         <span class="material-symbols-outlined">close</span>
-      </button>
-      <button class="control-icon-btn" @click="saveSegment" :disabled="!segmentReady" title="Create Segment">
-        <span class="material-symbols-outlined">add</span>
       </button>
     </div>
     
@@ -88,6 +88,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import WaveSurfer from 'wavesurfer.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
 
 const props = defineProps({
   audioUrl: {
@@ -96,7 +97,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['segmentCreated', 'segmentDeleted', 'transcribeSegment']);
+const emit = defineEmits(['segmentCreated', 'segmentDeleted', 'transcribeSegment', 'outsideDeleted']);
 
 // Refs
 const waveformRef = ref(null);
@@ -113,6 +114,10 @@ const segmentStart = ref(null);
 const segmentEnd = ref(null);
 const segmentReady = ref(false);
 const segments = ref([]);
+// Selected region reference created via drag selection
+const selectedRegion = ref(null);
+// Hold a reference to the regions plugin instance
+const regionsPlugin = ref(null);
 
 // Initialize WaveSurfer
 onMounted(() => {
@@ -170,6 +175,22 @@ onMounted(() => {
   
   wavesurfer.value.on('finish', () => {
     isPlaying.value = false;
+  });
+
+  // Register and configure Regions plugin (v7 API)
+  regionsPlugin.value = wavesurfer.value.registerPlugin(RegionsPlugin.create());
+  regionsPlugin.value.enableDragSelection({
+    slop: 5,
+    color: 'rgba(74, 111, 165, 0.4)'
+  });
+
+  // Handle region selection
+  regionsPlugin.value.on('region-created', (region) => {
+    // Keep only one active selection
+    if (selectedRegion.value && selectedRegion.value.id !== region.id) {
+      selectedRegion.value.remove();
+    }
+    selectedRegion.value = region;
   });
 });
 
@@ -443,6 +464,42 @@ const deleteSegment = (index) => {
     }
   });
 };
+// Clear the current region selection
+const clearSelection = () => {
+  if (selectedRegion.value) {
+    selectedRegion.value.remove();
+    selectedRegion.value = null;
+  }
+  // also clear any selection in plugin state to avoid ghost drag areas
+  if (regionsPlugin.value) {
+    regionsPlugin.value.clear();
+  }
+};
+
+// Cut (keep) the highlighted segment and emit it as a new saved segment
+const cutSegment = () => {
+  if (!selectedRegion.value) return;
+  const { start, end } = selectedRegion.value;
+  const newSegment = {
+    start,
+    end,
+    duration: end - start,
+    transcription: '',
+    isTranscribing: false
+  };
+  segments.value.push(newSegment);
+  emit('segmentCreated', newSegment);
+  clearSelection();
+};
+
+// Delete everything outside the highlighted region (emit event for parent or caller to handle)
+const deleteOutsideSegment = () => {
+  if (!selectedRegion.value) return;
+  const { start, end } = selectedRegion.value;
+  emit('outsideDeleted', { start, end });
+  clearSelection();
+};
+
 </script>
 
 <style scoped>
