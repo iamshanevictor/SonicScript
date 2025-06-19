@@ -17,6 +17,10 @@ const windowWidth = ref(window.innerWidth);
 
 // Source items
 const sources = ref([]);
+// Incrementing counter to ensure unique IDs across session
+let nextSourceId = 1;
+// Utility to get source by id
+const getSourceById = (id) => sources.value.find(s => s.id === id);
 
 // Selected audio source for waveform display
 const selectedAudioSource = ref(null);
@@ -58,6 +62,8 @@ const handleSourceSelect = (id, shouldSelect) => {
       src.selected = shouldSelect;
       if (shouldSelect && src.type === 'audio' && src.url) {
         selectedAudioSource.value = src;
+// Ensure segments array exists
+if (!src.segments) src.segments = [];
       } else if (!shouldSelect && selectedAudioSource.value && selectedAudioSource.value.id === id) {
         selectedAudioSource.value = null;
       }
@@ -84,6 +90,11 @@ const handleSourceDelete = (id) => {
     }
 
     sources.value.splice(index, 1);
+
+    // If list is now empty ensure selectedAudioSource is null
+    if (sources.value.length === 0) {
+      selectedAudioSource.value = null;
+    }
     console.log(`Deleted source ${id}`);
   }
 };
@@ -100,6 +111,11 @@ const formatTime = (seconds) => {
 
 // Handle segment creation from WaveformPlayer
 const handleSegmentCreated = (segment) => {
+  // Persist segment to the current source so it can be restored later
+  if (selectedAudioSource.value) {
+    if (!selectedAudioSource.value.segments) selectedAudioSource.value.segments = [];
+    selectedAudioSource.value.segments.push(segment);
+  }
   audioSegments.value.push({
     ...segment,
     transcription: "",
@@ -111,6 +127,10 @@ const handleSegmentCreated = (segment) => {
 
 // Handle segment deletion from WaveformPlayer
 const handleSegmentDeleted = (segment) => {
+  if (selectedAudioSource.value && selectedAudioSource.value.segments) {
+    const idx = selectedAudioSource.value.segments.findIndex(s => s.start === segment.start && s.end === segment.end);
+    if (idx !== -1) selectedAudioSource.value.segments.splice(idx, 1);
+  }
   console.log("Segment deleted:", segment);
   // Find the corresponding segment in the waveform player
   // This ensures the visual representation is also removed
@@ -223,11 +243,12 @@ const handleFileUpload = async () => {
 
       // Add the new source to the list
       const newSource = {
-        id: sources.value.length + 1,
+        id: nextSourceId++,
         name: data.originalName,
         type: "audio",
         selected: true,
         url: `http://localhost:5000${data.url}`,
+        segments: [],
       };
 
       // Deselect any previously selected sources
@@ -395,6 +416,7 @@ const handleFileUpload = async () => {
               <h3 class="section-title">Audio Waveform</h3>
               <WaveformPlayer
                 :audioUrl="selectedAudioSource.url"
+                :initialSegments="selectedAudioSource.segments || []"
                 @segmentCreated="handleSegmentCreated"
                 @segmentDeleted="handleSegmentDeleted"
                 @transcribeSegment="handleTranscribeSegment"

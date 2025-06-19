@@ -94,6 +94,11 @@ const props = defineProps({
   audioUrl: {
     type: String,
     required: true
+  },
+  // Preloaded segment list for this audio source
+  initialSegments: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -113,8 +118,12 @@ const isSegmenting = ref(false);
 const segmentStart = ref(null);
 const segmentEnd = ref(null);
 const segmentReady = ref(false);
-const segments = ref([]);
-// Selected region reference created via drag selection
+/*
+ * Segments are provided by parent component via `initialSegments` so that
+ * switching between audio sources will restore previously saved cuts.
+ */
+const segments = ref([...props.initialSegments]);
+// Selected region reference created via drag selection (temporary highlight only)
 const selectedRegion = ref(null);
 // Hold a reference to the regions plugin instance
 const regionsPlugin = ref(null);
@@ -201,15 +210,47 @@ onBeforeUnmount(() => {
   }
 });
 
-// Watch for audio URL changes
-watch(() => props.audioUrl, (newUrl) => {
+// Utility: redraw permanent regions from segments list
+const redrawRegions = () => {
+  if (!regionsPlugin.value) return;
+  // Remove all existing regions safely
+  regionsPlugin.value.getRegions().forEach(r => { try { r.remove(); } catch (_) {} });
+  // Add regions for current segments
+  segments.value.forEach((seg, idx) => {
+    try {
+      const region = regionsPlugin.value.addRegion({
+        id: `segment-${idx}`,
+        start: seg.start,
+        end: seg.end,
+        color: 'rgba(74, 111, 165, 0.4)',
+        drag: false,
+        resize: false,
+      });
+      seg.region = region;
+    } catch (e) {
+      console.error('Failed creating region', e);
+    }
+  });
+};
+
+// Watch for audio URL or supplied initialSegments changes
+watch([
+  () => props.audioUrl,
+  () => props.initialSegments
+], ([newUrl, newSegments]) => {
   if (wavesurfer.value && newUrl) {
+    // Load the new audio file
     wavesurfer.value.load(newUrl);
-    segments.value = [];
+    // Restore any pre-existing segments for this source (clone to decouple)
+    segments.value = (newSegments || []).map(s => ({ ...s }));
+    // Reset transient segmentation state
     segmentStart.value = null;
     segmentEnd.value = null;
     segmentReady.value = false;
     isSegmenting.value = false;
+
+    // Re-draw regions for segments
+    redrawRegions();
   }
 });
 
@@ -452,10 +493,7 @@ const clearSelection = () => {
     selectedRegion.value.remove();
     selectedRegion.value = null;
   }
-  // also clear any selection in plugin state to avoid ghost drag areas
-  if (regionsPlugin.value) {
-    regionsPlugin.value.clear();
-  }
+  // No further action needed – permanent regions remain; temporary selection is cleared above
 };
 
 // Cut (keep) the highlighted segment and emit it as a new saved segment
@@ -471,6 +509,22 @@ const cutSegment = () => {
   };
   segments.value.push(newSegment);
   emit('segmentCreated', newSegment);
+
+  // Add permanent region for this cut
+  if (regionsPlugin.value) {
+    try {
+      const region = regionsPlugin.value.addRegion({
+        id: `segment-${segments.value.length - 1}`,
+        start,
+        end,
+        color: 'rgba(74, 111, 165, 0.4)',
+        drag: false,
+        resize: false,
+      });
+      newSegment.region = region;
+    } catch (e) { console.error('addRegion fail', e); }
+  }
+
   clearSelection();
 };
 
