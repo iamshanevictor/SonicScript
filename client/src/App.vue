@@ -7,6 +7,8 @@ import "@/styles/app-component.css";
 import SourceItem from "./components/SourceItem.vue";
 import AudioPlayer from "./components/AudioPlayer.vue";
 import WaveformPlayer from "./components/WaveformPlayer.vue";
+import { apiUrl } from "@/services/config.js";
+import UploadButton from "./components/UploadButton.vue";
 
 // Panel collapse state
 const sourcesPanelCollapsed = ref(false);
@@ -71,6 +73,24 @@ if (!src.segments) src.segments = [];
       src.selected = false;
     }
   });
+};
+
+// Handle uploaded source from UploadButton
+const onUploaded = (source) => {
+  if (!source) return;
+  // Ensure unique id and proper selection state
+  const id = nextSourceId++;
+  sources.value.forEach((s) => (s.selected = false));
+  const newSrc = {
+    id,
+    name: source.name,
+    type: source.type || 'audio',
+    url: source.url,
+    selected: true,
+    segments: source.segments || [],
+  };
+  sources.value.push(newSrc);
+  selectedAudioSource.value = newSrc;
 };
 
 const handleSourceEdit = (id) => {
@@ -197,82 +217,6 @@ const removeSegment = (index) => {
   }
 };
 
-// File upload handling
-const isUploading = ref(false);
-const uploadProgress = ref(0);
-const uploadError = ref(null);
-
-const handleFileUpload = async () => {
-  // Create a file input element
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = ".mp3";
-
-  // Handle file selection
-  fileInput.onchange = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-      isUploading.value = true;
-      uploadError.value = null;
-      uploadProgress.value = 0;
-
-      // Create FormData
-      const formData = new FormData();
-      formData.append("file", file);
-
-      // Upload the file
-      const response = await fetch("http://localhost:5000/api/upload", {
-        method: "POST",
-        body: formData,
-        // Track upload progress
-        onUploadProgress: (progressEvent) => {
-          uploadProgress.value = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Upload failed");
-      }
-
-      const data = await response.json();
-
-      // Add the new source to the list
-      const newSource = {
-        id: nextSourceId++,
-        name: data.originalName,
-        type: "audio",
-        selected: true,
-        url: `http://localhost:5000${data.url}`,
-        segments: [],
-      };
-
-      // Deselect any previously selected sources
-      sources.value.forEach((source) => {
-        source.selected = false;
-      });
-
-      sources.value.push(newSource);
-
-      // Set as the current audio source
-      selectedAudioSource.value = newSource;
-
-      console.log("File uploaded successfully:", data);
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      uploadError.value = error.message;
-    } finally {
-      isUploading.value = false;
-    }
-  };
-
-  // Trigger the file input click
-  fileInput.click();
-};
 </script>
 
 <template>
@@ -330,10 +274,7 @@ const handleFileUpload = async () => {
           <!-- Expanded View -->
           <div v-else class="panel-content">
             <div class="panel-actions">
-              <button class="panel-action-btn" @click="handleFileUpload">
-                <span class="material-symbols-outlined">add</span>
-                <span>Add</span>
-              </button>
+              <UploadButton btnClass="panel-action-btn" label="Add" @uploaded="onUploaded" />
             </div>
 
             <div class="source-list">
@@ -382,14 +323,7 @@ const handleFileUpload = async () => {
             </div>
 
             <div class="action-buttons">
-              <button
-                class="primary-action-btn"
-                @click="handleFileUpload"
-                :disabled="isUploading"
-              >
-                <span class="material-symbols-outlined">upload_file</span>
-                <span>{{ isUploading ? "Uploading..." : "Upload Audio" }}</span>
-              </button>
+              <UploadButton btnClass="primary-action-btn" label="Upload Audio" @uploaded="onUploaded" />
               <button class="primary-action-btn">
                 <span class="material-symbols-outlined">download</span>
                 <span>Export CSV</span>

@@ -50,45 +50,22 @@
       </button>
     </div>
     
-    <div v-if="segments.length > 0" class="segments-list">
-      <h3>Segments</h3>
-      <div class="segment-item" v-for="(segment, index) in segments" :key="index">
-        <div class="segment-header">
-          <div class="segment-time">{{ formatTime(segment.start) }} - {{ formatTime(segment.end) }} ({{ formatDuration(segment.end - segment.start) }})</div>
-          <div class="segment-actions">
-            <button class="segment-action-btn" @click="playSegment(index)" title="Play segment">
-              <span class="material-symbols-outlined">play_arrow</span>
-            </button>
-            <button class="segment-action-btn" @click="downloadSegment(index)" title="Download segment">
-              <span class="material-symbols-outlined">download</span>
-            </button>
-            <button class="segment-action-btn" @click="deleteSegment(index)" title="Delete segment">
-              <span class="material-symbols-outlined">delete</span>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Transcription input directly in the segment -->
-        <div v-if="segment.isTranscribing" class="segment-loading">
-          <div class="loading-spinner"></div>
-          <span>Transcribing...</span>
-        </div>
-        <div v-else class="segment-transcription">
-          <textarea
-            class="segment-input"
-            placeholder="Type what you hear in this segment or click the microphone to auto-transcribe"
-            v-model="segment.transcription"
-          ></textarea>
-        </div>
-      </div>
-    </div>
+    <SegmentList
+      v-if="segments.length > 0"
+      :segments="segments"
+      @play="playSegment"
+      @download="downloadSegment"
+      @delete="deleteSegment"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
-import WaveSurfer from 'wavesurfer.js';
-import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
+import { apiUrl } from '@/services/config.js';
+import SegmentList from '@/components/SegmentList.vue';
+import { useWaveform } from '@/composables/useWaveform.js';
+import { formatTime, formatDuration } from '@/utils/time.js';
 
 const props = defineProps({
   audioUrl: {
@@ -104,198 +81,68 @@ const props = defineProps({
 
 const emit = defineEmits(['segmentCreated', 'segmentDeleted', 'transcribeSegment', 'outsideDeleted']);
 
-// Refs
-const waveformRef = ref(null);
-const wavesurfer = ref(null);
-const isPlaying = ref(false);
-const currentTime = ref(0);
-const duration = ref(0);
-const volume = ref(0.5);
-const zoomLevel = ref(50); // Initial zoom level (1-100)
+// Waveform composable
+const {
+  waveformRef,
+  wavesurfer,
+  regionsPlugin,
+  isPlaying,
+  currentTime,
+  duration,
+  volume,
+  zoomLevel,
+  selectedRegion,
+  segments,
+  init,
+  destroy,
+  togglePlay,
+  updateVolume,
+  zoomIn,
+  zoomOut,
+  playBetween,
+  clearSelection: clearSelectionWF,
+  setSegments,
+  redrawRegions,
+  loadUrl,
+} = useWaveform();
 
-// Segmentation
+// Segmentation state (UI flow helpers)
 const isSegmenting = ref(false);
 const segmentStart = ref(null);
 const segmentEnd = ref(null);
 const segmentReady = ref(false);
-/*
- * Segments are provided by parent component via `initialSegments` so that
- * switching between audio sources will restore previously saved cuts.
- */
-const segments = ref([...props.initialSegments]);
-// Selected region reference created via drag selection (temporary highlight only)
-const selectedRegion = ref(null);
-// Hold a reference to the regions plugin instance
-const regionsPlugin = ref(null);
 
-// Initialize WaveSurfer
+// Initialize via composable
 onMounted(() => {
-  if (!waveformRef.value) return;
-  
-  // Create WaveSurfer instance
-  wavesurfer.value = WaveSurfer.create({
-    container: waveformRef.value,
-    waveColor: 'rgba(100, 149, 237, 0.7)',
-    progressColor: 'rgb(100, 149, 237)',
-    cursorColor: '#fff',
-    height: 100,
-    responsive: true,
-    normalize: true,
-    partialRender: true,
-    // Use waveform instead of bars
-    barWidth: 0,  // Setting to 0 removes the bars
-    barGap: 0,    // No gap between bars
-    barRadius: 0, // No radius on bars
-    // Use a line waveform
-    waveform: {
-      type: 'line',
-      lineWidth: 2,
-      fillParent: true
-    }
-  });
-  
-  // Load audio file
-  wavesurfer.value.load(props.audioUrl);
-  
-  // Set initial volume
-  wavesurfer.value.setVolume(volume.value);
-  
-  // Event listeners
-  wavesurfer.value.on('ready', () => {
-    duration.value = wavesurfer.value.getDuration();
-    console.log('Audio loaded, duration:', duration.value);
-  });
-  
-  wavesurfer.value.on('audioprocess', () => {
-    currentTime.value = wavesurfer.value.getCurrentTime();
-  });
-  
-  wavesurfer.value.on('seek', () => {
-    currentTime.value = wavesurfer.value.getCurrentTime();
-  });
-  
-  wavesurfer.value.on('play', () => {
-    isPlaying.value = true;
-  });
-  
-  wavesurfer.value.on('pause', () => {
-    isPlaying.value = false;
-  });
-  
-  wavesurfer.value.on('finish', () => {
-    isPlaying.value = false;
-  });
-
-  // Register and configure Regions plugin (v7 API)
-  regionsPlugin.value = wavesurfer.value.registerPlugin(RegionsPlugin.create());
-  regionsPlugin.value.enableDragSelection({
-    slop: 5,
-    color: 'rgba(74, 111, 165, 0.4)'
-  });
-
-  // Handle region selection
-  regionsPlugin.value.on('region-created', (region) => {
-    // Keep only one active selection
-    if (selectedRegion.value && selectedRegion.value.id !== region.id) {
-      selectedRegion.value.remove();
-    }
-    selectedRegion.value = region;
-  });
+  init(waveformRef.value, props.audioUrl, props.initialSegments);
 });
 
 // Clean up on component unmount
 onBeforeUnmount(() => {
-  if (wavesurfer.value) {
-    wavesurfer.value.destroy();
-  }
+  destroy();
 });
 
-// Utility: redraw permanent regions from segments list
-const redrawRegions = () => {
-  if (!regionsPlugin.value) return;
-  // Remove all existing regions safely
-  regionsPlugin.value.getRegions().forEach(r => { try { r.remove(); } catch (_) {} });
-  // Add regions for current segments
-  segments.value.forEach((seg, idx) => {
-    try {
-      const region = regionsPlugin.value.addRegion({
-        id: `segment-${idx}`,
-        start: seg.start,
-        end: seg.end,
-        color: 'rgba(74, 111, 165, 0.4)',
-        drag: false,
-        resize: false,
-      });
-      seg.region = region;
-    } catch (e) {
-      console.error('Failed creating region', e);
-    }
-  });
-};
+// redrawRegions provided by composable
 
 // Watch for audio URL or supplied initialSegments changes
 watch([
   () => props.audioUrl,
-  () => props.initialSegments
+  () => props.initialSegments,
 ], ([newUrl, newSegments]) => {
-  if (wavesurfer.value && newUrl) {
-    // Load the new audio file
-    wavesurfer.value.load(newUrl);
-    // Restore any pre-existing segments for this source (clone to decouple)
-    segments.value = (newSegments || []).map(s => ({ ...s }));
-    // Reset transient segmentation state
-    segmentStart.value = null;
-    segmentEnd.value = null;
-    segmentReady.value = false;
-    isSegmenting.value = false;
-
-    // Re-draw regions for segments
-    redrawRegions();
-  }
+  if (newUrl) loadUrl(newUrl);
+  setSegments(newSegments || []);
+  // Reset transient segmentation state
+  segmentStart.value = null;
+  segmentEnd.value = null;
+  segmentReady.value = false;
+  isSegmenting.value = false;
+  redrawRegions();
 });
 
-// Format time in mm:ss format
-const formatTime = (seconds) => {
-  if (isNaN(seconds)) return '00:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
-
-const formatDuration = (seconds) => {
-  if (isNaN(seconds)) return '00:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
+// Time utilities imported from utils/time.js
 
 // Playback controls
-const togglePlay = () => {
-  if (wavesurfer.value) {
-    wavesurfer.value.playPause();
-  }
-};
-
-const updateVolume = () => {
-  if (wavesurfer.value) {
-    wavesurfer.value.setVolume(volume.value);
-  }
-};
-
-// Zoom controls
-const zoomIn = () => {
-  if (wavesurfer.value) {
-    zoomLevel.value = Math.min(zoomLevel.value + 10, 100);
-    wavesurfer.value.zoom(zoomLevel.value);
-  }
-};
-
-const zoomOut = () => {
-  if (wavesurfer.value) {
-    zoomLevel.value = Math.max(zoomLevel.value - 10, 10);
-    wavesurfer.value.zoom(zoomLevel.value);
-  }
-};
+// togglePlay, updateVolume, zoomIn, zoomOut provided by composable
 
 // Segment controls
 const startSegment = () => {
@@ -437,18 +284,59 @@ const playSegment = (index) => {
   if (!wavesurfer.value || index < 0 || index >= segments.value.length) return;
   
   const segment = segments.value[index];
-  wavesurfer.value.play(segment.start, segment.end);
+  playBetween(segment.start, segment.end);
 };
 
-const downloadSegment = (index) => {
+// Helper: extract filename from /api/audio/<filename> URL
+const extractFilename = (url) => {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split('/');
+    return parts[parts.length - 1] || '';
+  } catch (_) {
+    // Fallback for relative URLs
+    const parts = (url || '').split('/');
+    return parts[parts.length - 1] || '';
+  }
+};
+
+// Call backend to cut a segment and return processed file URL
+const requestCut = async (start, end) => {
+  const filename = extractFilename(props.audioUrl);
+  if (!filename) throw new Error('Unable to determine source filename');
+
+  const res = await fetch(apiUrl('/api/cut'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename, start, end })
+  });
+  if (!res.ok) {
+    let msg = 'Cut failed';
+    try { const err = await res.json(); msg = err.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+};
+
+const triggerDownload = (url) => {
+  const a = document.createElement('a');
+  a.href = apiUrl(url);
+  a.download = '';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
+const downloadSegment = async (index) => {
   if (index < 0 || index >= segments.value.length) return;
-  
-  // This is a placeholder - actual implementation would require backend support
-  // to extract and download the audio segment
-  console.log(`Download requested for segment ${index}`);
-  
-  // Display a message to the user
-  alert('Download functionality will be available in a future update.');
+  const seg = segments.value[index];
+  try {
+    const data = await requestCut(seg.start, seg.end);
+    if (data && data.url) triggerDownload(data.url);
+  } catch (e) {
+    console.error('Download segment failed:', e);
+    alert(`Download failed: ${e.message || e}`);
+  }
 };
 
 const transcribeSegment = (index) => {
@@ -489,15 +377,12 @@ const deleteSegment = (index) => {
 };
 // Clear the current region selection
 const clearSelection = () => {
-  if (selectedRegion.value) {
-    selectedRegion.value.remove();
-    selectedRegion.value = null;
-  }
+  clearSelectionWF();
   // No further action needed – permanent regions remain; temporary selection is cleared above
 };
 
 // Cut (keep) the highlighted segment and emit it as a new saved segment
-const cutSegment = () => {
+const cutSegment = async () => {
   if (!selectedRegion.value) return;
   const { start, end } = selectedRegion.value;
   const newSegment = {
@@ -526,6 +411,17 @@ const cutSegment = () => {
   }
 
   clearSelection();
+
+  // Optionally request backend cut immediately and prompt user to download
+  try {
+    const data = await requestCut(start, end);
+    if (data && data.url) {
+      // Offer immediate download for convenience
+      triggerDownload(data.url);
+    }
+  } catch (e) {
+    console.warn('Backend cut failed:', e);
+  }
 };
 
 // Delete everything outside the highlighted region (emit event for parent or caller to handle)

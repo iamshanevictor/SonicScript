@@ -1,3 +1,20 @@
+"""
+Thin Flask app entrypoint.
+
+This file now delegates all configuration, routes, and services to the
+`sonicscript` package and exposes a WSGI `app` for use by `run.py` or any
+WSGI server.
+"""
+
+from sonicscript import create_app
+
+# WSGI app
+app = create_app()
+
+
+if __name__ == "__main__":
+    # For local debugging only; prefer `python run.py` which uses the venv
+    app.run(debug=True, host="0.0.0.0", port=5000)
 import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS

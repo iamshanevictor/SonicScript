@@ -1,0 +1,32 @@
+# Node
+client/node_modules/
+client/dist/
+client/.vite/
+
+# Python
+server/.venv/
+server/venv/
+server/__pycache__/
+**/__pycache__/
+*.pyc
+
+# Env files
+.env
+*.env
+client/.env
+client/.env.*
+!client/.env.example
+server/.env
+server/.env.*
+!server/.env.example
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# App data
+server/uploads/
+server/processed/
