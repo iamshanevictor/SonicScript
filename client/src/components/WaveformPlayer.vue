@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { apiUrl } from '@/services/config.js';
 import SegmentList from '@/components/SegmentList.vue';
 import { useWaveform } from '@/composables/useWaveform.js';
@@ -359,44 +359,92 @@ const deleteSegment = (index) => {
   if (index < 0 || index >= segments.value.length) return;
   
   const segmentToDelete = segments.value[index];
+  const segmentStart = segmentToDelete.start;
+  const segmentEnd = segmentToDelete.end;
+  let regionToRemove = null;
 
-  // Remove corresponding region
+  // IMPORTANT: Find the region BEFORE removing from array (index is still valid)
   if (segmentToDelete.region) {
+    // Use the stored region reference
+    regionToRemove = segmentToDelete.region;
+  } else if (regionsPlugin.value) {
+    const regions = regionsPlugin.value.getRegions();
+    
+    // First try by ID (index is still valid here)
+    regionToRemove = regions.find(r => r.id === `segment-${index}`);
+    
+    // If not found by ID, try to match by start and end times
+    if (!regionToRemove) {
+      regionToRemove = regions.find(r => 
+        Math.abs(r.start - segmentStart) < 0.01 && 
+        Math.abs(r.end - segmentEnd) < 0.01
+      );
+    }
+  }
+
+  // Check if this is the currently selected region and clear it
+  if (selectedRegion.value && regionToRemove && selectedRegion.value.id === regionToRemove.id) {
+    clearSelectionWF();
+  }
+
+  // Remove the segment from the array FIRST
+  segments.value.splice(index, 1);
+
+  // Now remove the region (visual highlight) - try multiple methods
+  let regionRemoved = false;
+  
+  if (regionToRemove && typeof regionToRemove.remove === 'function') {
     try {
-      segmentToDelete.region.remove();
+      regionToRemove.remove();
+      console.log('Region removed successfully:', regionToRemove.id);
+      regionRemoved = true;
     } catch (e) {
       console.warn('Failed to remove region directly:', e);
-      // Fall through to fallback logic
     }
   }
   
-  // Fallback: try to find region by id or by matching start/end times
-  if (regionsPlugin.value) {
-    const regions = regionsPlugin.value.getRegions();
-    let target = null;
-    
-    // First try by ID
-    target = regions.find(r => r.id === `segment-${index}`);
-    
-    // If not found by ID, try to match by start and end times
-    if (!target) {
-      target = regions.find(r => 
-        Math.abs(r.start - segmentToDelete.start) < 0.01 && 
-        Math.abs(r.end - segmentToDelete.end) < 0.01
-      );
-    }
-    
-    if (target) {
+  // If region wasn't removed, try to find and remove it by time range
+  if (!regionRemoved && regionsPlugin.value) {
+    const allRegions = regionsPlugin.value.getRegions();
+    const matchingRegion = allRegions.find(r => 
+      r && typeof r.remove === 'function' &&
+      Math.abs(r.start - segmentStart) < 0.01 && 
+      Math.abs(r.end - segmentEnd) < 0.01
+    );
+    if (matchingRegion) {
       try {
-        target.remove();
+        matchingRegion.remove();
+        console.log('Region removed by time matching:', matchingRegion.id);
+        regionRemoved = true;
       } catch (e) {
-        console.warn('Failed to remove region in fallback:', e);
+        console.warn('Failed to remove matching region:', e);
+      }
+    }
+  }
+  
+  // If still not removed, try to find by ID (in case index-based lookup failed)
+  if (!regionRemoved && regionsPlugin.value) {
+    const allRegions = regionsPlugin.value.getRegions();
+    const regionById = allRegions.find(r => 
+      r && typeof r.remove === 'function' && r.id === `segment-${index}`
+    );
+    if (regionById) {
+      try {
+        regionById.remove();
+        console.log('Region removed by ID lookup:', regionById.id);
+        regionRemoved = true;
+      } catch (e) {
+        console.warn('Failed to remove region by ID:', e);
       }
     }
   }
 
-  // Remove the segment from the array
-  segments.value.splice(index, 1);
+  // Force a complete redraw of all regions to ensure sync
+  // This will remove any remaining regions and recreate only the ones that should exist
+  // Use nextTick to ensure DOM updates are processed
+  nextTick(() => {
+    redrawRegions();
+  });
 
   // Emit the delete event
   emit('segmentDeleted', segmentToDelete);
