@@ -362,11 +362,37 @@ const deleteSegment = (index) => {
 
   // Remove corresponding region
   if (segmentToDelete.region) {
-    segmentToDelete.region.remove();
-  } else if (regionsPlugin.value) {
-    // Fallback: try to find region by id
-    const target = regionsPlugin.value.getRegions().find(r => r.id === `segment-${index}`);
-    if (target) target.remove();
+    try {
+      segmentToDelete.region.remove();
+    } catch (e) {
+      console.warn('Failed to remove region directly:', e);
+      // Fall through to fallback logic
+    }
+  }
+  
+  // Fallback: try to find region by id or by matching start/end times
+  if (regionsPlugin.value) {
+    const regions = regionsPlugin.value.getRegions();
+    let target = null;
+    
+    // First try by ID
+    target = regions.find(r => r.id === `segment-${index}`);
+    
+    // If not found by ID, try to match by start and end times
+    if (!target) {
+      target = regions.find(r => 
+        Math.abs(r.start - segmentToDelete.start) < 0.01 && 
+        Math.abs(r.end - segmentToDelete.end) < 0.01
+      );
+    }
+    
+    if (target) {
+      try {
+        target.remove();
+      } catch (e) {
+        console.warn('Failed to remove region in fallback:', e);
+      }
+    }
   }
 
   // Remove the segment from the array
@@ -385,12 +411,14 @@ const clearSelection = () => {
 const cutSegment = async () => {
   if (!selectedRegion.value) return;
   const { start, end } = selectedRegion.value;
+  const segmentIndex = segments.value.length;
   const newSegment = {
     start,
     end,
     duration: end - start,
     transcription: '',
-    isTranscribing: false
+    isTranscribing: false,
+    region: null // Initialize region property
   };
   segments.value.push(newSegment);
   emit('segmentCreated', newSegment);
@@ -399,15 +427,20 @@ const cutSegment = async () => {
   if (regionsPlugin.value) {
     try {
       const region = regionsPlugin.value.addRegion({
-        id: `segment-${segments.value.length - 1}`,
+        id: `segment-${segmentIndex}`,
         start,
         end,
         color: 'rgba(74, 111, 165, 0.4)',
         drag: false,
         resize: false,
       });
+      // Store the region reference in the segment object
       newSegment.region = region;
-    } catch (e) { console.error('addRegion fail', e); }
+      // Also update the segment in the array to ensure the reference is stored
+      segments.value[segmentIndex].region = region;
+    } catch (e) { 
+      console.error('addRegion fail', e); 
+    }
   }
 
   clearSelection();
